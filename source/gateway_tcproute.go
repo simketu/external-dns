@@ -20,8 +20,9 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"sigs.k8s.io/gateway-api/apis/v1alpha2"
-	informers "sigs.k8s.io/gateway-api/pkg/client/informers/gateway/externalversions"
-	informers_v1a2 "sigs.k8s.io/gateway-api/pkg/client/informers/gateway/externalversions/apis/v1alpha2"
+	"sigs.k8s.io/gateway-api/apis/v1beta1"
+	informers "sigs.k8s.io/gateway-api/pkg/client/informers/externalversions"
+	informers_v1a2 "sigs.k8s.io/gateway-api/pkg/client/informers/externalversions/apis/v1alpha2"
 )
 
 // NewGatewayTCPRouteSource creates a new Gateway TCPRoute source with the given config.
@@ -31,13 +32,13 @@ func NewGatewayTCPRouteSource(clients ClientGenerator, config *Config) (Source, 
 	})
 }
 
-type gatewayTCPRoute struct{ route *v1alpha2.TCPRoute }
+type gatewayTCPRoute struct{ route v1alpha2.TCPRoute } // NOTE: Must update TypeMeta in List when changing the APIVersion.
 
-func (rt *gatewayTCPRoute) Object() kubeObject                { return rt.route }
-func (rt *gatewayTCPRoute) Metadata() *metav1.ObjectMeta      { return &rt.route.ObjectMeta }
-func (rt *gatewayTCPRoute) Hostnames() []v1alpha2.Hostname    { return nil }
-func (rt *gatewayTCPRoute) Protocol() v1alpha2.ProtocolType   { return v1alpha2.TCPProtocolType }
-func (rt *gatewayTCPRoute) RouteStatus() v1alpha2.RouteStatus { return rt.route.Status.RouteStatus }
+func (rt *gatewayTCPRoute) Object() kubeObject               { return &rt.route }
+func (rt *gatewayTCPRoute) Metadata() *metav1.ObjectMeta     { return &rt.route.ObjectMeta }
+func (rt *gatewayTCPRoute) Hostnames() []v1beta1.Hostname    { return nil }
+func (rt *gatewayTCPRoute) Protocol() v1beta1.ProtocolType   { return v1beta1.TCPProtocolType }
+func (rt *gatewayTCPRoute) RouteStatus() v1beta1.RouteStatus { return rt.route.Status.RouteStatus }
 
 type gatewayTCPRouteInformer struct {
 	informers_v1a2.TCPRouteInformer
@@ -50,7 +51,14 @@ func (inf gatewayTCPRouteInformer) List(namespace string, selector labels.Select
 	}
 	routes := make([]gatewayRoute, len(list))
 	for i, rt := range list {
-		routes[i] = &gatewayTCPRoute{rt}
+		// List results are supposed to be treated as read-only.
+		// We make a shallow copy since we're only interested in setting the TypeMeta.
+		clone := *rt
+		clone.TypeMeta = metav1.TypeMeta{
+			APIVersion: v1alpha2.GroupVersion.String(),
+			Kind:       "TCPRoute",
+		}
+		routes[i] = &gatewayTCPRoute{clone}
 	}
 	return routes, nil
 }

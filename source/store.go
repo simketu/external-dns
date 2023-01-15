@@ -35,7 +35,7 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
-	gateway "sigs.k8s.io/gateway-api/pkg/client/clientset/gateway/versioned"
+	gateway "sigs.k8s.io/gateway-api/pkg/client/clientset/versioned"
 )
 
 // ErrSourceNotFound is returned when a requested source doesn't exist.
@@ -229,6 +229,8 @@ func BuildWithConfig(ctx context.Context, source string, p ClientGenerator, cfg 
 		return NewPodSource(ctx, client, cfg.Namespace, cfg.Compatibility)
 	case "gateway-httproute":
 		return NewGatewayHTTPRouteSource(p, cfg)
+	case "gateway-grpcroute":
+		return NewGatewayGRPCRouteSource(p, cfg)
 	case "gateway-tlsroute":
 		return NewGatewayTLSRouteSource(p, cfg)
 	case "gateway-tcproute":
