@@ -34,7 +34,8 @@ func TestRecords(t *testing.T) {
 	}))
 	defer svr.Close()
 
-	provider := NewPluginProvider(svr.URL)
+	provider, err := NewPluginProvider(svr.URL)
+	require.Nil(t, err)
 	endpoints, err := provider.Records(context.TODO())
 	require.Nil(t, err)
 	require.NotNil(t, endpoints)
@@ -54,8 +55,9 @@ func TestApplyChanges(t *testing.T) {
 	}))
 	defer svr.Close()
 
-	provider := NewPluginProvider(svr.URL)
-	err := provider.ApplyChanges(context.TODO(), nil)
+	provider, err := NewPluginProvider(svr.URL)
+	require.Nil(t, err)
+	err = provider.ApplyChanges(context.TODO(), nil)
 	require.Nil(t, err)
 
 	successfulApplyChanges = false

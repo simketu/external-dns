@@ -23,6 +23,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 
 	"sigs.k8s.io/external-dns/endpoint"
 	"sigs.k8s.io/external-dns/plan"
@@ -31,20 +32,24 @@ import (
 
 type PluginProvider struct {
 	provider.BaseProvider
-	client       *http.Client
-	remoteServer string
+	client          *http.Client
+	remoteServerURL *url.URL
 }
 
-func NewPluginProvider(url string) *PluginProvider {
-	return &PluginProvider{
-		client:       &http.Client{},
-		remoteServer: url,
+func NewPluginProvider(u string) (*PluginProvider, error) {
+	parsedURL, err := url.Parse(u)
+	if err != nil {
+		return nil, err
 	}
+	return &PluginProvider{
+		client:          &http.Client{},
+		remoteServerURL: parsedURL,
+	}, nil
 }
 
-// Records will make a GET call to p.remoteServer and return the results
+// Records will make a GET call to p.remoteServerURL and return the results
 func (p PluginProvider) Records(ctx context.Context) ([]*endpoint.Endpoint, error) {
-	req, err := http.NewRequest("GET", p.remoteServer, nil)
+	req, err := http.NewRequest("GET", p.remoteServerURL.String(), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -69,14 +74,14 @@ func (p PluginProvider) Records(ctx context.Context) ([]*endpoint.Endpoint, erro
 	return endpoints, nil
 }
 
-// ApplyChanges will make a POST to p.remoteServer with the changes
+// ApplyChanges will make a POST to p.remoteServerURL with the changes
 func (p PluginProvider) ApplyChanges(ctx context.Context, changes *plan.Changes) error {
 	b, err := json.Marshal(changes)
 	if err != nil {
 		return err
 	}
 
-	req, err := http.NewRequest("POST", p.remoteServer, bytes.NewBuffer(b))
+	req, err := http.NewRequest("POST", p.remoteServerURL.String(), bytes.NewBuffer(b))
 	if err != nil {
 		return err
 	}
