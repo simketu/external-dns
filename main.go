@@ -356,7 +356,7 @@ func main() {
 	case "tencentcloud":
 		p, err = tencentcloud.NewTencentCloudProvider(domainFilter, zoneIDFilter, cfg.TencentCloudConfigFile, cfg.TencentCloudZoneType, cfg.DryRun)
 	case "plugin":
-		p = plugin.NewPluginProvider(cfg.PluginProviderURL)
+		p, err = plugin.NewPluginProvider(cfg.PluginProviderURL)
 	default:
 		log.Fatalf("unknown dns provider: %s", cfg.Provider)
 	}
