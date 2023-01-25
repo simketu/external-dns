@@ -64,8 +64,6 @@ func (p PluginProvider) Records(ctx context.Context) ([]*endpoint.Endpoint, erro
 		return nil, err
 	}
 
-	fmt.Println(string(b))
-
 	endpoints := []*endpoint.Endpoint{}
 	err = json.Unmarshal(b, &endpoints)
 	if err != nil {
