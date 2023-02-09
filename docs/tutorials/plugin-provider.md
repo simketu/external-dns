@@ -1,6 +1,6 @@
 # Plugin provider
 
-The Plugin provider is a provider that allows DNS providers to integrate with ExternalDNS via an HTTP interface. The Plugin provider implements the Provider interface but instead of implementing code specific to a provider, it implements and HTTP client that sends request to an HTTP API. The idea behind this is that providers can be implemented in a separate program that exposes an HTTP API that the Plugin provider can interact with. The ideal setup for providers is to run as sidecars of the ExternalDNS container, but this is not strictly a requirement.
+The Plugin provider is a provider that allows DNS providers to integrate with ExternalDNS via an HTTP interface. The Plugin provider implements the Provider interface but instead of implementing code specific to a provider, it implements and HTTP client that sends request to an HTTP API. The idea behind this is that providers can be implemented in a separate program that exposes an HTTP API that the Plugin provider can interact with. The ideal setup for providers is to run as sidecars of the ExternalDNS container and listen on localhost only, but this is not strictly a requirement even if we do not recommend other setups.
 
 ## Architectural diagram
 
