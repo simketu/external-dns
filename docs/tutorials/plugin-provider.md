@@ -4,7 +4,7 @@ The Plugin provider is a provider that allows DNS providers to integrate with Ex
 
 ## Architectural diagram
 
-![Pluging provider](../img/plugin-provider.png)
+![Plugin provider](../img/plugin-provider.png)
 
 ## API guarantees
 
