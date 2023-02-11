@@ -25,9 +25,10 @@ import (
 	"net/http"
 	"net/url"
 
-	log "github.com/sirupsen/logrus"
 	"sigs.k8s.io/external-dns/endpoint"
 	"sigs.k8s.io/external-dns/plan"
+
+	log "github.com/sirupsen/logrus"
 )
 
 type PluginProvider struct {
