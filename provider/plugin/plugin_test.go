@@ -18,6 +18,8 @@ package plugin
 
 import (
 	"context"
+	"encoding/json"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -64,4 +66,65 @@ func TestApplyChanges(t *testing.T) {
 
 	err = provider.ApplyChanges(context.TODO(), nil)
 	require.NotNil(t, err)
+}
+
+func TestPropertyValuesEqual(t *testing.T) {
+	svr := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		j, _ := json.Marshal(&PropertiesValuesEqualsResponse{
+			Equals: false,
+		})
+		w.Write(j)
+	}))
+	defer svr.Close()
+
+	provider, err := NewPluginProvider(svr.URL)
+	require.Nil(t, err)
+	b := provider.PropertyValuesEqual("name", "previous", "current")
+	require.Equal(t, false, b)
+}
+
+func TestAdjustEndpoints(t *testing.T) {
+	svr := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		var endpoints []*endpoint.Endpoint
+		defer r.Body.Close()
+		b, err := io.ReadAll(r.Body)
+		if err != nil {
+			t.Fatal(err)
+		}
+		err = json.Unmarshal(b, &endpoints)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		for _, e := range endpoints {
+			e.RecordTTL = 0
+		}
+		j, _ := json.Marshal(endpoints)
+		w.Write(j)
+
+	}))
+	defer svr.Close()
+
+	provider, err := NewPluginProvider(svr.URL)
+	require.Nil(t, err)
+	endpoints := []*endpoint.Endpoint{
+		{
+			DNSName:    "test.example.com",
+			RecordTTL:  10,
+			RecordType: "A",
+			Targets: endpoint.Targets{
+				"",
+			},
+		},
+	}
+	adjustedEndpoints := provider.AdjustEndpoints(endpoints)
+	require.Equal(t, []*endpoint.Endpoint{{
+		DNSName:    "test.example.com",
+		RecordTTL:  0,
+		RecordType: "A",
+		Targets: endpoint.Targets{
+			"",
+		},
+	}}, adjustedEndpoints)
+
 }

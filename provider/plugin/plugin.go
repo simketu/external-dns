@@ -35,6 +35,16 @@ type PluginProvider struct {
 	remoteServerURL *url.URL
 }
 
+type PropertyValuesEqualsRequest struct {
+	Name     string `json:"name"`
+	Previous string `json:"previous"`
+	Current  string `json:"current"`
+}
+
+type PropertiesValuesEqualsResponse struct {
+	Equals bool `json:"equals"`
+}
+
 func NewPluginProvider(u string) (*PluginProvider, error) {
 	parsedURL, err := url.Parse(u)
 	if err != nil {
@@ -113,36 +123,85 @@ func (p PluginProvider) ApplyChanges(ctx context.Context, changes *plan.Changes)
 // as the quirks in its implementation seems to tell me that this is not the right interface to have to abstract a provider
 // and rather a biproduct of the organic code of this project and its providers over the years.
 func (p PluginProvider) PropertyValuesEqual(name string, previous string, current string) bool {
-	u, err := url.JoinPath(p.remoteServerURL.String(), "records")
+	u, err := url.JoinPath(p.remoteServerURL.String(), "propertiesvaluesequal")
 	if err != nil {
 		return previous == current
 	}
-	b, err := json.Marshal(changes)
+	b, err := json.Marshal(&PropertyValuesEqualsRequest{
+		Name:     name,
+		Previous: previous,
+		Current:  current,
+	})
 	if err != nil {
-		return err
+		return previous == current
 	}
 
-	req, err := http.NewRequest("POST", u, bytes.NewBuffer(b))
+	req, err := http.NewRequest("GET", u, bytes.NewBuffer(b))
 	if err != nil {
-		return err
+		return previous == current
 	}
 	resp, err := p.client.Do(req)
 	if err != nil {
-		return err
+		return previous == current
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("failed to apply changes with code %d", resp.StatusCode)
+		log.Errorf("failed to apply changes with code %d", resp.StatusCode)
+		return previous == current
 	}
-	return nil
+
+	respoBody, err := io.ReadAll(resp.Body)
+	if err != nil {
+		log.Errorf("failed to apply changes with code %d", resp.StatusCode)
+		return previous == current
+	}
+
+	r := PropertiesValuesEqualsResponse{}
+	err = json.Unmarshal(respoBody, &r)
+	if err != nil {
+		log.Errorf("failed to apply changes with code %d", resp.StatusCode)
+		return previous == current
+	}
+	return r.Equals
 }
 
 // AdjustEndpoints will call the provider doing a GET on `/adjustendpoints` which will return a list of modified endpoints
-// based on a provider specific requirement
-func (p PluginProvider) AdjustEndpoints(endpoints []*endpoint.Endpoint) []*endpoint.Endpoint {
-	// TODO implement me
-	return nil
+// based on a provider specific requirement.
+// This method returns the original list of endpoints e, non adjusted if there is a technical error on the provider's side.
+// This is again one evidence of how this interface was not made to be used across the wire and we have to assume a default case
+// of errors that may not be safe.
+// TODO revisit the decision around arror handling in this method and the interface in general.
+func (p PluginProvider) AdjustEndpoints(e []*endpoint.Endpoint) []*endpoint.Endpoint {
+	u, err := url.JoinPath(p.remoteServerURL.String(), "adjustendpoints")
+	if err != nil {
+		return e
+	}
+	b, err := json.Marshal(e)
+	if err != nil {
+		return e
+	}
+	req, err := http.NewRequest("POST", u, bytes.NewBuffer(b))
+	if err != nil {
+		return e
+	}
+	resp, err := p.client.Do(req)
+	if err != nil {
+		return e
+	}
+	defer resp.Body.Close()
+
+	b, err = io.ReadAll(resp.Body)
+	if err != nil {
+		return e
+	}
+
+	endpoints := []*endpoint.Endpoint{}
+	err = json.Unmarshal(b, &endpoints)
+	if err != nil {
+		return e
+	}
+	return endpoints
 }
 
 // GetDomainFilter is the default implementation of GetDomainFilter.
