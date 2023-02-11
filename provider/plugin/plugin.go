@@ -114,7 +114,7 @@ func (p PluginProvider) ApplyChanges(ctx context.Context, changes *plan.Changes)
 
 // PropertyValuesEqual will call the provider doing a GET on `/propertyvaluesequal` which will return a boolean in the format
 // `{propertyvaluesequal: true}`
-// Errors in anything technically happening from the provider will default to the defualt implmentation `previous == current`.
+// Errors in anything technically happening from the provider will default to the default implmentation `previous == current`.
 // Errors will also be logged and exposed as metrics so that it is possible to alert on the if needed.
 //
 // TODO(Raffo) this defaulting to the default behavior isn't ideal and could lead to misbehavior. I did this mostly because
