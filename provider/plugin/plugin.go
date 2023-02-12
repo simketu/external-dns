@@ -172,7 +172,7 @@ func (p PluginProvider) PropertyValuesEqual(name string, previous string, curren
 // This method returns the original list of endpoints e, non adjusted if there is a technical error on the provider's side.
 // This is again one evidence of how this interface was not made to be used across the wire and we have to assume a default case
 // of errors that may not be safe.
-// TODO revisit the decision around arror handling in this method and the interface in general.
+// TODO revisit the decision around error handling in this method and the interface in general.
 func (p PluginProvider) AdjustEndpoints(e []*endpoint.Endpoint) []*endpoint.Endpoint {
 	u, err := url.JoinPath(p.remoteServerURL.String(), "adjustendpoints")
 	if err != nil {
