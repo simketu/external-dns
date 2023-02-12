@@ -12,4 +12,4 @@ Providers implementing the HTTP API have to keep in sync with changes to the Go 
 
 ## Provider registry
 
-To simplify the discovery of providers, we will accept pull requests that will add links to providers in the README file. This list will serve the only purpose of simplifying finding providers and will not constitute an official endorsment of any of the externally implemented providers unless otherwise specified.
+To simplify the discovery of providers, we will accept pull requests that will add links to providers in the [README](../../README.md) file. This list will serve the only purpose of simplifying finding providers and will not constitute an official endorsment of any of the externally implemented providers unless otherwise specified.
