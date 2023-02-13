@@ -182,7 +182,7 @@ func (p PluginProvider) AdjustEndpoints(e []*endpoint.Endpoint) []*endpoint.Endp
 	if err != nil {
 		return e
 	}
-	req, err := http.NewRequest("POST", u, bytes.NewBuffer(b))
+	req, err := http.NewRequest("GET", u, bytes.NewBuffer(b))
 	if err != nil {
 		return e
 	}
