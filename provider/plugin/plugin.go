@@ -32,6 +32,13 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+const (
+	mediaTypeFormatAndVersion = "application/external.dns.plugin+json;version=1"
+	contentTypeHeader         = "Content-Type"
+	acceptHeader              = "Accept"
+	varyHeader                = "Vary"
+)
+
 var (
 	recordsGauge = prometheus.NewGauge(
 		prometheus.GaugeOpts{
@@ -92,8 +99,34 @@ func NewPluginProvider(u string) (*PluginProvider, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	// negotiate API information
+	req, err := http.NewRequest("GET", u, nil)
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set(acceptHeader, mediaTypeFormatAndVersion)
+
+	client := &http.Client{}
+
+	resp, err := client.Do(req)
+	if err != nil {
+		recordsGauge.Inc()
+		return nil, err
+	}
+	vary := resp.Header.Get(varyHeader)
+	contentType := resp.Header.Get(contentTypeHeader)
+
+	if vary != contentTypeHeader {
+		return nil, fmt.Errorf("wrong vary value returned from server: %s", vary)
+	}
+
+	if contentType != mediaTypeFormatAndVersion {
+		return nil, fmt.Errorf("wrong content type returned from server: %s", contentType)
+	}
+
 	return &PluginProvider{
-		client:          &http.Client{},
+		client:          client,
 		remoteServerURL: parsedURL,
 	}, nil
 }
