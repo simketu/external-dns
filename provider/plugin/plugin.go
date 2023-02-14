@@ -73,6 +73,11 @@ func (p PluginProvider) Records(ctx context.Context) ([]*endpoint.Endpoint, erro
 	}
 	defer resp.Body.Close()
 
+	if resp.StatusCode != http.StatusOK {
+		log.Debugf("error from external provider, HTTP status code %d", resp.StatusCode)
+		return nil, fmt.Errorf("failed to apply changes with code %d", resp.StatusCode)
+	}
+
 	b, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, err
@@ -108,6 +113,7 @@ func (p PluginProvider) ApplyChanges(ctx context.Context, changes *plan.Changes)
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
+		log.Debugf("error from external provider, HTTP status code %d", resp.StatusCode)
 		return fmt.Errorf("failed to apply changes with code %d", resp.StatusCode)
 	}
 	return nil
@@ -148,7 +154,7 @@ func (p PluginProvider) PropertyValuesEqual(name string, previous string, curren
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		log.Errorf("failed to apply changes with code %d", resp.StatusCode)
+		log.Debugf("failed to apply changes with code %d", resp.StatusCode)
 		return previous == current
 	}
 
@@ -191,6 +197,11 @@ func (p PluginProvider) AdjustEndpoints(e []*endpoint.Endpoint) []*endpoint.Endp
 		return e
 	}
 	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		log.Debugf("error from external provider, HTTP status code %d", resp.StatusCode)
+		return e
+	}
 
 	b, err = io.ReadAll(resp.Body)
 	if err != nil {
