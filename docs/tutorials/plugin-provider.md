@@ -12,6 +12,19 @@ The idea behind it is that providers can be implemented in a separate program: t
 
 Providers implementing the HTTP API have to keep in sync with changes to the Go types `plan.Changes` and `endpoint.Endpoint`. We do not expect to make significant changes to those types given the maturity of the project, but we can't exclude that changes will need to happen. We commit to publishing changes to those in the release notes, to ensure that providers implementing the API can keep providers up to date quickly.
 
+## Implementation requirements
+
+The following table represents the methods to implement mapped to their HTTP method and route.
+
+| Provider method | HTTP Method | Route |
+| --- | --- | --- |
+| Records | GET | /records |
+| ApplyChanges | POST | /records |
+| PropertyValuesEqual | GET | /propertiesvaluesequal |
+| AdjustEndpoints | GET | /adjustendpoints |
+
+**NOTE**: all responses sent with a status code different from `20X` will be considered a failure on the ExternalDNS' side.
+
 ## Provider registry
 
 To simplify the discovery of providers, we will accept pull requests that will add links to providers in the [README](../../README.md) file. This list will serve the only purpose of simplifying finding providers and will not constitute an official endorsment of any of the externally implemented providers unless otherwise specified.
