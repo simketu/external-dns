@@ -28,7 +28,43 @@ import (
 	"sigs.k8s.io/external-dns/endpoint"
 	"sigs.k8s.io/external-dns/plan"
 
+	"github.com/prometheus/client_golang/prometheus"
 	log "github.com/sirupsen/logrus"
+)
+
+var (
+	recordsGauge = prometheus.NewGauge(
+		prometheus.GaugeOpts{
+			Namespace: "external_dns",
+			Subsystem: "plugin_provider",
+			Name:      "records_errors",
+			Help:      "Errors with Records method",
+		},
+	)
+	applyChangesGauge = prometheus.NewGauge(
+		prometheus.GaugeOpts{
+			Namespace: "external_dns",
+			Subsystem: "plugin_provider",
+			Name:      "applychanges_errors",
+			Help:      "Errors with ApplyChanges method",
+		},
+	)
+	propertyValuesEqualGauge = prometheus.NewGauge(
+		prometheus.GaugeOpts{
+			Namespace: "external_dns",
+			Subsystem: "plugin_provider",
+			Name:      "propertyvaluesequal_errors",
+			Help:      "Errors with PropertyValuesEqual method",
+		},
+	)
+	adjustEndpointsGauge = prometheus.NewGauge(
+		prometheus.GaugeOpts{
+			Namespace: "external_dns",
+			Subsystem: "plugin_provider",
+			Name:      "adjustendpointsgauge_errors",
+			Help:      "Errors with AdjustEndpoints method",
+		},
+	)
 )
 
 type PluginProvider struct {
@@ -47,6 +83,11 @@ type PropertiesValuesEqualsResponse struct {
 }
 
 func NewPluginProvider(u string) (*PluginProvider, error) {
+	prometheus.MustRegister(recordsGauge)
+	prometheus.MustRegister(applyChangesGauge)
+	prometheus.MustRegister(propertyValuesEqualGauge)
+	prometheus.MustRegister(adjustEndpointsGauge)
+
 	parsedURL, err := url.Parse(u)
 	if err != nil {
 		return nil, err
@@ -69,23 +110,27 @@ func (p PluginProvider) Records(ctx context.Context) ([]*endpoint.Endpoint, erro
 	}
 	resp, err := p.client.Do(req)
 	if err != nil {
+		recordsGauge.Inc()
 		return nil, err
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
+		recordsGauge.Inc()
 		log.Debugf("error from external provider, HTTP status code %d", resp.StatusCode)
 		return nil, fmt.Errorf("failed to apply changes with code %d", resp.StatusCode)
 	}
 
 	b, err := io.ReadAll(resp.Body)
 	if err != nil {
+		recordsGauge.Inc()
 		return nil, err
 	}
 
 	endpoints := []*endpoint.Endpoint{}
 	err = json.Unmarshal(b, &endpoints)
 	if err != nil {
+		recordsGauge.Inc()
 		return nil, err
 	}
 	return endpoints, nil
@@ -108,11 +153,13 @@ func (p PluginProvider) ApplyChanges(ctx context.Context, changes *plan.Changes)
 	}
 	resp, err := p.client.Do(req)
 	if err != nil {
+		applyChangesGauge.Inc()
 		return err
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
+		applyChangesGauge.Inc()
 		log.Debugf("error from external provider, HTTP status code %d", resp.StatusCode)
 		return fmt.Errorf("failed to apply changes with code %d", resp.StatusCode)
 	}
@@ -149,17 +196,20 @@ func (p PluginProvider) PropertyValuesEqual(name string, previous string, curren
 	}
 	resp, err := p.client.Do(req)
 	if err != nil {
+		propertyValuesEqualGauge.Inc()
 		return previous == current
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
+		propertyValuesEqualGauge.Inc()
 		log.Debugf("failed to apply changes with code %d", resp.StatusCode)
 		return previous == current
 	}
 
 	respoBody, err := io.ReadAll(resp.Body)
 	if err != nil {
+		propertyValuesEqualGauge.Inc()
 		log.Errorf("failed to apply changes with code %d", resp.StatusCode)
 		return previous == current
 	}
@@ -167,6 +217,7 @@ func (p PluginProvider) PropertyValuesEqual(name string, previous string, curren
 	r := PropertiesValuesEqualsResponse{}
 	err = json.Unmarshal(respoBody, &r)
 	if err != nil {
+		propertyValuesEqualGauge.Inc()
 		log.Errorf("failed to apply changes with code %d", resp.StatusCode)
 		return previous == current
 	}
@@ -194,23 +245,27 @@ func (p PluginProvider) AdjustEndpoints(e []*endpoint.Endpoint) []*endpoint.Endp
 	}
 	resp, err := p.client.Do(req)
 	if err != nil {
+		adjustEndpointsGauge.Inc()
 		return e
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
+		adjustEndpointsGauge.Inc()
 		log.Debugf("error from external provider, HTTP status code %d", resp.StatusCode)
 		return e
 	}
 
 	b, err = io.ReadAll(resp.Body)
 	if err != nil {
+		adjustEndpointsGauge.Inc()
 		return e
 	}
 
 	endpoints := []*endpoint.Endpoint{}
 	err = json.Unmarshal(b, &endpoints)
 	if err != nil {
+		adjustEndpointsGauge.Inc()
 		return e
 	}
 	return endpoints
