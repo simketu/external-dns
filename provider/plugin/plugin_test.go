@@ -30,6 +30,12 @@ import (
 
 func TestRecords(t *testing.T) {
 	svr := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/" {
+			w.Header().Set(varyHeader, contentTypeHeader)
+			w.Header().Set(contentTypeHeader, mediaTypeFormatAndVersion)
+			w.WriteHeader(200)
+			return
+		}
 		w.Write([]byte(`[{
 			"dnsName" : "test.example.com"
 		}]`))
@@ -41,7 +47,7 @@ func TestRecords(t *testing.T) {
 	endpoints, err := provider.Records(context.TODO())
 	require.Nil(t, err)
 	require.NotNil(t, endpoints)
-	require.Equal(t, []*endpoint.Endpoint{&endpoint.Endpoint{
+	require.Equal(t, []*endpoint.Endpoint{{
 		DNSName: "test.example.com",
 	}}, endpoints)
 }
@@ -49,6 +55,12 @@ func TestRecords(t *testing.T) {
 func TestApplyChanges(t *testing.T) {
 	successfulApplyChanges := true
 	svr := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/" {
+			w.Header().Set(varyHeader, contentTypeHeader)
+			w.Header().Set(contentTypeHeader, mediaTypeFormatAndVersion)
+			w.WriteHeader(200)
+			return
+		}
 		if successfulApplyChanges {
 			w.WriteHeader(http.StatusOK)
 		} else {
@@ -70,6 +82,12 @@ func TestApplyChanges(t *testing.T) {
 
 func TestPropertyValuesEqual(t *testing.T) {
 	svr := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/" {
+			w.Header().Set(varyHeader, contentTypeHeader)
+			w.Header().Set(contentTypeHeader, mediaTypeFormatAndVersion)
+			w.WriteHeader(200)
+			return
+		}
 		j, _ := json.Marshal(&PropertiesValuesEqualsResponse{
 			Equals: false,
 		})
@@ -85,6 +103,12 @@ func TestPropertyValuesEqual(t *testing.T) {
 
 func TestAdjustEndpoints(t *testing.T) {
 	svr := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/" {
+			w.Header().Set(varyHeader, contentTypeHeader)
+			w.Header().Set(contentTypeHeader, mediaTypeFormatAndVersion)
+			w.WriteHeader(200)
+			return
+		}
 		var endpoints []*endpoint.Endpoint
 		defer r.Body.Close()
 		b, err := io.ReadAll(r.Body)

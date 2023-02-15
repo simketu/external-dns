@@ -89,12 +89,14 @@ type PropertiesValuesEqualsResponse struct {
 	Equals bool `json:"equals"`
 }
 
-func NewPluginProvider(u string) (*PluginProvider, error) {
+func init() {
 	prometheus.MustRegister(recordsGauge)
 	prometheus.MustRegister(applyChangesGauge)
 	prometheus.MustRegister(propertyValuesEqualGauge)
 	prometheus.MustRegister(adjustEndpointsGauge)
+}
 
+func NewPluginProvider(u string) (*PluginProvider, error) {
 	parsedURL, err := url.Parse(u)
 	if err != nil {
 		return nil, err
