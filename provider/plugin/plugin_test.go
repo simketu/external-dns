@@ -88,7 +88,7 @@ func TestPropertyValuesEqual(t *testing.T) {
 			w.WriteHeader(200)
 			return
 		}
-		j, _ := json.Marshal(&PropertiesValuesEqualsResponse{
+		j, _ := json.Marshal(&PropertiesValuesEqualResponse{
 			Equals: false,
 		})
 		w.Write(j)

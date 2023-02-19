@@ -79,13 +79,13 @@ type PluginProvider struct {
 	remoteServerURL *url.URL
 }
 
-type PropertyValuesEqualsRequest struct {
+type PropertyValuesEqualRequest struct {
 	Name     string `json:"name"`
 	Previous string `json:"previous"`
 	Current  string `json:"current"`
 }
 
-type PropertiesValuesEqualsResponse struct {
+type PropertiesValuesEqualResponse struct {
 	Equals bool `json:"equals"`
 }
 
@@ -229,7 +229,7 @@ func (p PluginProvider) PropertyValuesEqual(name string, previous string, curren
 		log.Debugf("error joining path: %s", err)
 		return previous == current
 	}
-	b, err := json.Marshal(&PropertyValuesEqualsRequest{
+	b, err := json.Marshal(&PropertyValuesEqualRequest{
 		Name:     name,
 		Previous: previous,
 		Current:  current,
@@ -267,7 +267,7 @@ func (p PluginProvider) PropertyValuesEqual(name string, previous string, curren
 		return previous == current
 	}
 
-	r := PropertiesValuesEqualsResponse{}
+	r := PropertiesValuesEqualResponse{}
 	err = json.Unmarshal(respoBody, &r)
 	if err != nil {
 		propertyValuesEqualErrorsGauge.Inc()
