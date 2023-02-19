@@ -203,14 +203,12 @@ func (p PluginProvider) ApplyChanges(ctx context.Context, changes *plan.Changes)
 
 // PropertyValuesEqual will call the provider doing a GET on `/propertyvaluesequal` which will return a boolean in the format
 // `{propertyvaluesequal: true}`
-// Errors in anything technically happening from the provider will default to the default implmentation `previous == current`.
-// Errors will also be logged and exposed as metrics so that it is possible to alert on the if needed.
+// Errors in anything technically happening from the provider will default to the default implementation `previous == current`.
+// Errors will also be logged and exposed as metrics so that it is possible to alert on them if needed.
 //
-// TODO(Raffo) this defaulting to the default behavior isn't ideal and could lead to misbehavior. I did this mostly because
-// I have no better choice than doing this as we are "bending" the provider interface to work across the wire, exposing some
-// of the limits of the provider interface itself. I think this is an opportunity for thinking if this requires a refactor
-// as the quirks in its implementation seems to tell me that this is not the right interface to have to abstract a provider
-// and rather a biproduct of the organic code of this project and its providers over the years.
+// TODO(Raffo) this method defaults to the BaseProvider's behavior of comparison. This isn't ideal and could lead to the providers
+// not functioning properly. This was done because there is no better choice than doing this as we are "bending" the provider interface
+// to work across the wire, exposing some of the limits of the provider interface itself.
 func (p PluginProvider) PropertyValuesEqual(name string, previous string, current string) bool {
 	u, err := url.JoinPath(p.remoteServerURL.String(), "propertiesvaluesequal")
 	if err != nil {
@@ -261,10 +259,8 @@ func (p PluginProvider) PropertyValuesEqual(name string, previous string, curren
 
 // AdjustEndpoints will call the provider doing a GET on `/adjustendpoints` which will return a list of modified endpoints
 // based on a provider specific requirement.
-// This method returns the original list of endpoints e, non adjusted if there is a technical error on the provider's side.
-// This is again one evidence of how this interface was not made to be used across the wire and we have to assume a default case
-// of errors that may not be safe.
-// TODO revisit the decision around error handling in this method and the interface in general.
+// This method returns the original list of endpoints `e` non adjusted in case there is a technical error on the provider's side.
+// TODO(raffo) revisit the decision around error handling in this method and the interface in general.
 func (p PluginProvider) AdjustEndpoints(e []*endpoint.Endpoint) []*endpoint.Endpoint {
 	u, err := url.JoinPath(p.remoteServerURL.String(), "adjustendpoints")
 	if err != nil {
