@@ -171,7 +171,7 @@ func (p PluginProvider) Records(ctx context.Context) ([]*endpoint.Endpoint, erro
 	err = json.Unmarshal(b, &endpoints)
 	if err != nil {
 		recordsErrorsGauge.Inc()
-		log.Debugf("error unmarshalling response body: %s", err.Error())
+		log.Debugf("error unmarshaling response body: %s", err.Error())
 		return nil, err
 	}
 	return endpoints, nil
@@ -188,7 +188,7 @@ func (p PluginProvider) ApplyChanges(ctx context.Context, changes *plan.Changes)
 	b, err := json.Marshal(changes)
 	if err != nil {
 		applyChangesErrorsGauge.Inc()
-		log.Debugf("error marshalling changes: %s", err.Error())
+		log.Debugf("error marshaling changes: %s", err.Error())
 		return err
 	}
 
@@ -232,7 +232,7 @@ func (p PluginProvider) PropertyValuesEqual(name string, previous string, curren
 	})
 	if err != nil {
 		propertyValuesEqualErrorsGauge.Inc()
-		log.Debugf("error marshalling request: %s", err)
+		log.Debugf("error marshaling request: %s", err)
 		return true
 	}
 
@@ -287,7 +287,7 @@ func (p PluginProvider) AdjustEndpoints(e []*endpoint.Endpoint) []*endpoint.Endp
 	b, err := json.Marshal(e)
 	if err != nil {
 		adjustEndpointsErrorsGauge.Inc()
-		log.Debugf("error marshalling endpoints, %s", err)
+		log.Debugf("error marshaling endpoints, %s", err)
 		return e
 	}
 	req, err := http.NewRequest("GET", u, bytes.NewBuffer(b))
@@ -321,7 +321,7 @@ func (p PluginProvider) AdjustEndpoints(e []*endpoint.Endpoint) []*endpoint.Endp
 	err = json.Unmarshal(b, &endpoints)
 	if err != nil {
 		adjustEndpointsErrorsGauge.Inc()
-		log.Debugf("error unmarshalling response body, %s", err)
+		log.Debugf("error unmarshaling response body, %s", err)
 		return e
 	}
 	return endpoints
