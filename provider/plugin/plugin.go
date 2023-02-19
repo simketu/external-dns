@@ -113,7 +113,6 @@ func NewPluginProvider(u string) (*PluginProvider, error) {
 
 	resp, err := client.Do(req)
 	if err != nil {
-		recordsErrorsGauge.Inc()
 		return nil, err
 	}
 	vary := resp.Header.Get(varyHeader)
@@ -137,15 +136,20 @@ func NewPluginProvider(u string) (*PluginProvider, error) {
 func (p PluginProvider) Records(ctx context.Context) ([]*endpoint.Endpoint, error) {
 	u, err := url.JoinPath(p.remoteServerURL.String(), "records")
 	if err != nil {
+		recordsErrorsGauge.Inc()
+		log.Debugf("error joining path: %s", err.Error())
 		return nil, err
 	}
 	req, err := http.NewRequest("GET", u, nil)
 	if err != nil {
+		recordsErrorsGauge.Inc()
+		log.Debugf("error creating request: %s", err.Error())
 		return nil, err
 	}
 	resp, err := p.client.Do(req)
 	if err != nil {
 		recordsErrorsGauge.Inc()
+		log.Debugf("error performing request: %s", err.Error())
 		return nil, err
 	}
 	defer resp.Body.Close()
@@ -159,6 +163,7 @@ func (p PluginProvider) Records(ctx context.Context) ([]*endpoint.Endpoint, erro
 	b, err := io.ReadAll(resp.Body)
 	if err != nil {
 		recordsErrorsGauge.Inc()
+		log.Debugf("error reading response body: %s", err.Error())
 		return nil, err
 	}
 
@@ -166,6 +171,7 @@ func (p PluginProvider) Records(ctx context.Context) ([]*endpoint.Endpoint, erro
 	err = json.Unmarshal(b, &endpoints)
 	if err != nil {
 		recordsErrorsGauge.Inc()
+		log.Debugf("error unmarshalling response body: %s", err.Error())
 		return nil, err
 	}
 	return endpoints, nil
@@ -175,20 +181,27 @@ func (p PluginProvider) Records(ctx context.Context) ([]*endpoint.Endpoint, erro
 func (p PluginProvider) ApplyChanges(ctx context.Context, changes *plan.Changes) error {
 	u, err := url.JoinPath(p.remoteServerURL.String(), "records")
 	if err != nil {
+		applyChangesErrorsGauge.Inc()
+		log.Debugf("error joining path: %s", err.Error())
 		return err
 	}
 	b, err := json.Marshal(changes)
 	if err != nil {
+		applyChangesErrorsGauge.Inc()
+		log.Debugf("error marshalling changes: %s", err.Error())
 		return err
 	}
 
 	req, err := http.NewRequest("POST", u, bytes.NewBuffer(b))
 	if err != nil {
+		applyChangesErrorsGauge.Inc()
+		log.Debugf("error creating request: %s", err.Error())
 		return err
 	}
 	resp, err := p.client.Do(req)
 	if err != nil {
 		applyChangesErrorsGauge.Inc()
+		log.Debugf("error performing request: %s", err.Error())
 		return err
 	}
 	defer resp.Body.Close()
@@ -212,6 +225,8 @@ func (p PluginProvider) ApplyChanges(ctx context.Context, changes *plan.Changes)
 func (p PluginProvider) PropertyValuesEqual(name string, previous string, current string) bool {
 	u, err := url.JoinPath(p.remoteServerURL.String(), "propertiesvaluesequal")
 	if err != nil {
+		propertyValuesEqualErrorsGauge.Inc()
+		log.Debugf("error joining path: %s", err)
 		return previous == current
 	}
 	b, err := json.Marshal(&PropertyValuesEqualsRequest{
@@ -220,16 +235,21 @@ func (p PluginProvider) PropertyValuesEqual(name string, previous string, curren
 		Current:  current,
 	})
 	if err != nil {
+		propertyValuesEqualErrorsGauge.Inc()
+		log.Debugf("error marshalling request: %s", err)
 		return previous == current
 	}
 
 	req, err := http.NewRequest("GET", u, bytes.NewBuffer(b))
 	if err != nil {
+		propertyValuesEqualErrorsGauge.Inc()
+		log.Debugf("error creating request: %s", err)
 		return previous == current
 	}
 	resp, err := p.client.Do(req)
 	if err != nil {
 		propertyValuesEqualErrorsGauge.Inc()
+		log.Debugf("error performing request: %s", err)
 		return previous == current
 	}
 	defer resp.Body.Close()
@@ -264,19 +284,26 @@ func (p PluginProvider) PropertyValuesEqual(name string, previous string, curren
 func (p PluginProvider) AdjustEndpoints(e []*endpoint.Endpoint) []*endpoint.Endpoint {
 	u, err := url.JoinPath(p.remoteServerURL.String(), "adjustendpoints")
 	if err != nil {
+		adjustEndpointsErrorsGauge.Inc()
+		log.Debugf("error joining path, %s", err)
 		return e
 	}
 	b, err := json.Marshal(e)
 	if err != nil {
+		adjustEndpointsErrorsGauge.Inc()
+		log.Debugf("error marshalling endpoints, %s", err)
 		return e
 	}
 	req, err := http.NewRequest("GET", u, bytes.NewBuffer(b))
 	if err != nil {
+		adjustEndpointsErrorsGauge.Inc()
+		log.Debugf("error creating new HTTP request, %s", err)
 		return e
 	}
 	resp, err := p.client.Do(req)
 	if err != nil {
 		adjustEndpointsErrorsGauge.Inc()
+		log.Debugf("error in http request, %s", err)
 		return e
 	}
 	defer resp.Body.Close()
@@ -290,6 +317,7 @@ func (p PluginProvider) AdjustEndpoints(e []*endpoint.Endpoint) []*endpoint.Endp
 	b, err = io.ReadAll(resp.Body)
 	if err != nil {
 		adjustEndpointsErrorsGauge.Inc()
+		log.Debugf("error reading response body, %s", err)
 		return e
 	}
 
@@ -297,6 +325,7 @@ func (p PluginProvider) AdjustEndpoints(e []*endpoint.Endpoint) []*endpoint.Endp
 	err = json.Unmarshal(b, &endpoints)
 	if err != nil {
 		adjustEndpointsErrorsGauge.Inc()
+		log.Debugf("error unmarshalling response body, %s", err)
 		return e
 	}
 	return endpoints
