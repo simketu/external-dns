@@ -275,54 +275,53 @@ func (p PluginProvider) PropertyValuesEqual(name string, previous string, curren
 
 // AdjustEndpoints will call the provider doing a GET on `/adjustendpoints` which will return a list of modified endpoints
 // based on a provider specific requirement.
-// This method returns the original list of endpoints `e` non adjusted in case there is a technical error on the provider's side.
-// TODO(raffo) revisit the decision around error handling in this method and the interface in general.
+// This method returns an empty slice in case there is a technical error on the provider's side so that no endpoints will be considered.
 func (p PluginProvider) AdjustEndpoints(e []*endpoint.Endpoint) []*endpoint.Endpoint {
+	endpoints := []*endpoint.Endpoint{}
 	u, err := url.JoinPath(p.remoteServerURL.String(), "adjustendpoints")
 	if err != nil {
 		adjustEndpointsErrorsGauge.Inc()
 		log.Debugf("error joining path, %s", err)
-		return e
+		return endpoints
 	}
 	b, err := json.Marshal(e)
 	if err != nil {
 		adjustEndpointsErrorsGauge.Inc()
 		log.Debugf("error marshaling endpoints, %s", err)
-		return e
+		return endpoints
 	}
 	req, err := http.NewRequest("GET", u, bytes.NewBuffer(b))
 	if err != nil {
 		adjustEndpointsErrorsGauge.Inc()
 		log.Debugf("error creating new HTTP request, %s", err)
-		return e
+		return endpoints
 	}
 	resp, err := p.client.Do(req)
 	if err != nil {
 		adjustEndpointsErrorsGauge.Inc()
 		log.Debugf("error in http request, %s", err)
-		return e
+		return endpoints
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
 		adjustEndpointsErrorsGauge.Inc()
 		log.Debugf("error from external provider, HTTP status code %d", resp.StatusCode)
-		return e
+		return endpoints
 	}
 
 	b, err = io.ReadAll(resp.Body)
 	if err != nil {
 		adjustEndpointsErrorsGauge.Inc()
 		log.Debugf("error reading response body, %s", err)
-		return e
+		return endpoints
 	}
 
-	endpoints := []*endpoint.Endpoint{}
 	err = json.Unmarshal(b, &endpoints)
 	if err != nil {
 		adjustEndpointsErrorsGauge.Inc()
 		log.Debugf("error unmarshaling response body, %s", err)
-		return e
+		return endpoints
 	}
 	return endpoints
 }
