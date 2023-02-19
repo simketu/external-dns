@@ -216,18 +216,14 @@ func (p PluginProvider) ApplyChanges(ctx context.Context, changes *plan.Changes)
 
 // PropertyValuesEqual will call the provider doing a GET on `/propertyvaluesequal` which will return a boolean in the format
 // `{propertyvaluesequal: true}`
-// Errors in anything technically happening from the provider will default to the default implementation `previous == current`.
+// Errors in anything technically happening from the provider will return true so that no update is performed.
 // Errors will also be logged and exposed as metrics so that it is possible to alert on them if needed.
-//
-// TODO(Raffo) this method defaults to the BaseProvider's behavior of comparison. This isn't ideal and could lead to the providers
-// not functioning properly. This was done because there is no better choice than doing this as we are "bending" the provider interface
-// to work across the wire, exposing some of the limits of the provider interface itself.
 func (p PluginProvider) PropertyValuesEqual(name string, previous string, current string) bool {
 	u, err := url.JoinPath(p.remoteServerURL.String(), "propertiesvaluesequal")
 	if err != nil {
 		propertyValuesEqualErrorsGauge.Inc()
 		log.Debugf("error joining path: %s", err)
-		return previous == current
+		return true
 	}
 	b, err := json.Marshal(&PropertyValuesEqualRequest{
 		Name:     name,
@@ -237,34 +233,34 @@ func (p PluginProvider) PropertyValuesEqual(name string, previous string, curren
 	if err != nil {
 		propertyValuesEqualErrorsGauge.Inc()
 		log.Debugf("error marshalling request: %s", err)
-		return previous == current
+		return true
 	}
 
 	req, err := http.NewRequest("GET", u, bytes.NewBuffer(b))
 	if err != nil {
 		propertyValuesEqualErrorsGauge.Inc()
 		log.Debugf("error creating request: %s", err)
-		return previous == current
+		return true
 	}
 	resp, err := p.client.Do(req)
 	if err != nil {
 		propertyValuesEqualErrorsGauge.Inc()
 		log.Debugf("error performing request: %s", err)
-		return previous == current
+		return true
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
 		propertyValuesEqualErrorsGauge.Inc()
 		log.Debugf("failed to apply changes with code %d", resp.StatusCode)
-		return previous == current
+		return true
 	}
 
 	respoBody, err := io.ReadAll(resp.Body)
 	if err != nil {
 		propertyValuesEqualErrorsGauge.Inc()
 		log.Errorf("failed to apply changes with code %d", resp.StatusCode)
-		return previous == current
+		return true
 	}
 
 	r := PropertiesValuesEqualResponse{}
@@ -272,7 +268,7 @@ func (p PluginProvider) PropertyValuesEqual(name string, previous string, curren
 	if err != nil {
 		propertyValuesEqualErrorsGauge.Inc()
 		log.Errorf("failed to apply changes with code %d", resp.StatusCode)
-		return previous == current
+		return true
 	}
 	return r.Equals
 }
