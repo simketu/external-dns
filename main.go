@@ -356,6 +356,25 @@ func main() {
 	case "tencentcloud":
 		p, err = tencentcloud.NewTencentCloudProvider(domainFilter, zoneIDFilter, cfg.TencentCloudConfigFile, cfg.TencentCloudZoneType, cfg.DryRun)
 	case "plugin":
+		startedChan := make(chan struct{})
+		if cfg.RunAWSProviderAsPlugin {
+			go aws.StartAWSPluginProvider(aws.AWSConfig{
+				DomainFilter:         domainFilter,
+				ZoneIDFilter:         zoneIDFilter,
+				ZoneTypeFilter:       zoneTypeFilter,
+				ZoneTagFilter:        zoneTagFilter,
+				BatchChangeSize:      cfg.AWSBatchChangeSize,
+				BatchChangeInterval:  cfg.AWSBatchChangeInterval,
+				EvaluateTargetHealth: cfg.AWSEvaluateTargetHealth,
+				AssumeRole:           cfg.AWSAssumeRole,
+				AssumeRoleExternalID: cfg.AWSAssumeRoleExternalID,
+				APIRetries:           cfg.AWSAPIRetries,
+				PreferCNAME:          cfg.AWSPreferCNAME,
+				DryRun:               cfg.DryRun,
+				ZoneCacheDuration:    cfg.AWSZoneCacheDuration,
+			}, startedChan)
+		}
+		<-startedChan
 		p, err = plugin.NewPluginProvider(cfg.PluginProviderURL)
 	default:
 		log.Fatalf("unknown dns provider: %s", cfg.Provider)

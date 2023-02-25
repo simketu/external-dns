@@ -20,7 +20,7 @@ The following table represents the methods to implement mapped to their HTTP met
 | --- | --- | --- |
 | Records | GET | /records |
 | ApplyChanges | POST | /records |
-| PropertyValuesEqual | GET | /propertiesvaluesequal |
+| PropertyValuesEqual | GET | /propertyvaluesequal |
 | AdjustEndpoints | GET | /adjustendpoints |
 
 Additionally, the server needs to respond to `GET` requests on `/` to negotiate versions by content type as described in [this document](http://opensource.zalando.com/restful-api-guidelines/#114). The server needs to respond to those requests by reading the `Accept` header and responding with a corresponding `Vary` header including the value `Content-Type` and a `Content-Type` header specifying the supported media type format and version.

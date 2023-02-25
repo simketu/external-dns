@@ -85,7 +85,7 @@ type PropertyValuesEqualRequest struct {
 	Current  string `json:"current"`
 }
 
-type PropertiesValuesEqualResponse struct {
+type PropertyValuesEqualResponse struct {
 	Equals bool `json:"equals"`
 }
 
@@ -219,7 +219,7 @@ func (p PluginProvider) ApplyChanges(ctx context.Context, changes *plan.Changes)
 // Errors in anything technically happening from the provider will return true so that no update is performed.
 // Errors will also be logged and exposed as metrics so that it is possible to alert on them if needed.
 func (p PluginProvider) PropertyValuesEqual(name string, previous string, current string) bool {
-	u, err := url.JoinPath(p.remoteServerURL.String(), "propertiesvaluesequal")
+	u, err := url.JoinPath(p.remoteServerURL.String(), "propertyvaluesequal")
 	if err != nil {
 		propertyValuesEqualErrorsGauge.Inc()
 		log.Debugf("error joining path: %s", err)
@@ -259,15 +259,14 @@ func (p PluginProvider) PropertyValuesEqual(name string, previous string, curren
 	respoBody, err := io.ReadAll(resp.Body)
 	if err != nil {
 		propertyValuesEqualErrorsGauge.Inc()
-		log.Errorf("failed to apply changes with code %d", resp.StatusCode)
+		log.Errorf("failed to read body: %v", err)
 		return true
 	}
-
-	r := PropertiesValuesEqualResponse{}
+	r := PropertyValuesEqualResponse{}
 	err = json.Unmarshal(respoBody, &r)
 	if err != nil {
 		propertyValuesEqualErrorsGauge.Inc()
-		log.Errorf("failed to apply changes with code %d", resp.StatusCode)
+		log.Errorf("failed to unmarshal body: %v", err)
 		return true
 	}
 	return r.Equals

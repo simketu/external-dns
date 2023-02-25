@@ -199,6 +199,7 @@ type Config struct {
 	PluralCluster                     string
 	PluralProvider                    string
 	PluginProviderURL                 string
+	RunAWSProviderAsPlugin            bool
 }
 
 var defaultConfig = &Config{
@@ -580,6 +581,7 @@ func (cfg *Config) ParseFlags(args []string) error {
 
 	// Plugin provider
 	app.Flag("plugin-provider-url", "The URL of the remote endpoint to call for the plugin provider (default: :8888)").Default(defaultConfig.PluginProviderURL).StringVar(&cfg.PluginProviderURL)
+	app.Flag("run-aws-provider-as-plugin", "When enabled, the AWS provider will be run as a plugin (default: false). To be used together with 'plugin' as provider.").BoolVar(&cfg.RunAWSProviderAsPlugin)
 
 	_, err := app.Parse(args)
 	if err != nil {
