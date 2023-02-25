@@ -30,3 +30,15 @@ Additionally, the server needs to respond to `GET` requests on `/` to negotiate 
 ## Provider registry
 
 To simplify the discovery of providers, we will accept pull requests that will add links to providers in the [README](../../README.md) file. This list will serve the only purpose of simplifying finding providers and will not constitute an official endorsment of any of the externally implemented providers unless otherwise specified.
+
+
+## Run the AWS provider with the plugin provider.
+
+To test the Plugin provider and provide a reference implementation, we added the functionality to run the AWS provider as a plugin. To run the AWS provider as a plugin, you need the following flags:
+
+```yaml
+- --provider=plugin
+- --run-aws-provider-as-plugin
+```
+
+What will happen behind the scenes is that the AWS provider will be be started as an HTTP server exposed only on localhost and the plugin provider will be configured to talk to it. This is the same setup that we recommend for other providers and a good way to test the Plugin provider other than to serve as a reference implementation.
