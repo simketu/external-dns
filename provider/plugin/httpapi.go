@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package aws
+package plugin
 
 import (
 	"context"
@@ -26,17 +26,11 @@ import (
 	log "github.com/sirupsen/logrus"
 	"sigs.k8s.io/external-dns/endpoint"
 	"sigs.k8s.io/external-dns/plan"
+	"sigs.k8s.io/external-dns/provider"
 )
 
-const (
-	mediaTypeFormatAndVersion = "application/external.dns.plugin+json;version=1"
-	contentTypeHeader         = "Content-Type"
-	acceptHeader              = "Accept"
-	varyHeader                = "Vary"
-)
-
-type AWSPlugin struct {
-	provider *AWSProvider
+type HTTPProvider struct {
+	provider provider.Provider
 }
 
 type PropertyValuesEqualsRequest struct {
@@ -49,9 +43,8 @@ type PropertyValuesEqualsResponse struct {
 	Equals bool `json:"equals"`
 }
 
-func (p *AWSPlugin) awsProviderHandler(w http.ResponseWriter, req *http.Request) {
+func (p *HTTPProvider) recordsHandler(w http.ResponseWriter, req *http.Request) {
 	if req.Method == http.MethodGet { // records
-		log.Println("get records")
 		records, err := p.provider.Records(context.Background())
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
@@ -82,7 +75,7 @@ func (p *AWSPlugin) awsProviderHandler(w http.ResponseWriter, req *http.Request)
 	log.Println("this should never happen")
 }
 
-func (p *AWSPlugin) propertyValuesEquals(w http.ResponseWriter, req *http.Request) {
+func (p *HTTPProvider) propertyValuesEquals(w http.ResponseWriter, req *http.Request) {
 	if req.Method == http.MethodGet { // propertyValuesEquals
 		pve := PropertyValuesEqualsRequest{}
 		if err := json.NewDecoder(req.Body).Decode(&pve); err != nil {
@@ -99,10 +92,9 @@ func (p *AWSPlugin) propertyValuesEquals(w http.ResponseWriter, req *http.Reques
 		}
 		w.Write(out)
 	}
-
 }
 
-func (p *AWSPlugin) adjustEndpoints(w http.ResponseWriter, req *http.Request) {
+func (p *HTTPProvider) adjustEndpoints(w http.ResponseWriter, req *http.Request) {
 	if req.Method == http.MethodGet { // propertyValuesEquals
 		pve := []*endpoint.Endpoint{}
 		if err := json.NewDecoder(req.Body).Decode(&pve); err != nil {
@@ -116,26 +108,20 @@ func (p *AWSPlugin) adjustEndpoints(w http.ResponseWriter, req *http.Request) {
 
 }
 
-func (p *AWSPlugin) Negotiate(w http.ResponseWriter, req *http.Request) {
+func (p *HTTPProvider) Negotiate(w http.ResponseWriter, req *http.Request) {
 	w.Header().Set(varyHeader, contentTypeHeader)
 	w.Header().Set(contentTypeHeader, mediaTypeFormatAndVersion)
 	w.WriteHeader(200)
 }
 
-func StartAWSPluginProvider(config AWSConfig, startedChan chan struct{}) {
-	// instantiate the aws provider
-	awsProvider, err := NewAWSProvider(config)
-	if err != nil {
-		panic(err)
-	}
-
-	p := AWSPlugin{
-		provider: awsProvider,
+func StartHTTPApi(provider provider.Provider, startedChan chan struct{}) {
+	p := HTTPProvider{
+		provider: provider,
 	}
 
 	m := http.NewServeMux()
 	m.HandleFunc("/", p.Negotiate)
-	m.HandleFunc("/records", p.awsProviderHandler)
+	m.HandleFunc("/records", p.recordsHandler)
 	m.HandleFunc("/propertyvaluesequal", p.propertyValuesEquals)
 	m.HandleFunc("/adjustendpoints", p.adjustEndpoints)
 
