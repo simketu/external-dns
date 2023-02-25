@@ -19,11 +19,11 @@ package aws
 import (
 	"context"
 	"encoding/json"
-	"log"
 	"net"
 	"net/http"
 	"time"
 
+	log "github.com/sirupsen/logrus"
 	"sigs.k8s.io/external-dns/endpoint"
 	"sigs.k8s.io/external-dns/plan"
 )
