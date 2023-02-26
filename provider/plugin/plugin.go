@@ -28,6 +28,7 @@ import (
 	"sigs.k8s.io/external-dns/endpoint"
 	"sigs.k8s.io/external-dns/plan"
 
+	"github.com/cenkalti/backoff"
 	"github.com/prometheus/client_golang/prometheus"
 	log "github.com/sirupsen/logrus"
 )
@@ -37,6 +38,7 @@ const (
 	contentTypeHeader         = "Content-Type"
 	acceptHeader              = "Accept"
 	varyHeader                = "Vary"
+	maxRetries                = 5
 )
 
 var (
@@ -110,11 +112,15 @@ func NewPluginProvider(u string) (*PluginProvider, error) {
 	req.Header.Set(acceptHeader, mediaTypeFormatAndVersion)
 
 	client := &http.Client{}
+	var resp *http.Response
+	err = backoff.Retry(func() error {
+		resp, err = client.Do(req)
+		if err != nil {
+			log.Printf("error connecting to plugin api: %v", err)
+		}
+		return err
+	}, backoff.WithMaxRetries(backoff.NewExponentialBackOff(), maxRetries))
 
-	resp, err := client.Do(req)
-	if err != nil {
-		return nil, err
-	}
 	vary := resp.Header.Get(varyHeader)
 	contentType := resp.Header.Get(contentTypeHeader)
 

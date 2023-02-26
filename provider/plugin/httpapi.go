@@ -55,15 +55,11 @@ func (p *HTTPProvider) recordsHandler(w http.ResponseWriter, req *http.Request) 
 		json.NewEncoder(w).Encode(records)
 		return
 	} else if req.Method == http.MethodPost { // applychanges
-		log.Println("post applychanges")
-		// extract changes from the request body
 		var changes plan.Changes
 		if err := json.NewDecoder(req.Body).Decode(&changes); err != nil {
 			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
-		p.provider.ApplyChanges(context.Background(), &changes)
-
 		err := p.provider.ApplyChanges(context.Background(), &changes)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
@@ -72,58 +68,77 @@ func (p *HTTPProvider) recordsHandler(w http.ResponseWriter, req *http.Request) 
 		w.WriteHeader(http.StatusOK)
 		return
 	}
-	log.Println("this should never happen")
+	log.Errorf("Unsupported method %s", req.Method)
+	w.WriteHeader(http.StatusBadRequest)
 }
 
-func (p *HTTPProvider) propertyValuesEquals(w http.ResponseWriter, req *http.Request) {
-	if req.Method == http.MethodGet { // propertyValuesEquals
-		pve := PropertyValuesEqualsRequest{}
-		if err := json.NewDecoder(req.Body).Decode(&pve); err != nil {
-			w.WriteHeader(http.StatusBadRequest)
-			return
-		}
-		b := p.provider.PropertyValuesEqual(pve.Name, pve.Previous, pve.Current)
-		r := PropertyValuesEqualsResponse{
-			Equals: b,
-		}
-		out, err := json.Marshal(&r)
-		if err != nil {
-			panic(err)
-		}
-		w.Write(out)
-	}
-}
-
-func (p *HTTPProvider) adjustEndpoints(w http.ResponseWriter, req *http.Request) {
-	if req.Method == http.MethodGet { // propertyValuesEquals
-		pve := []*endpoint.Endpoint{}
-		if err := json.NewDecoder(req.Body).Decode(&pve); err != nil {
-			w.WriteHeader(http.StatusBadRequest)
-			return
-		}
-		pve = p.provider.AdjustEndpoints(pve)
-		out, _ := json.Marshal(&pve)
-		w.Write(out)
+func (p *HTTPProvider) propertyValuesEqualsHandler(w http.ResponseWriter, req *http.Request) {
+	if req.Method != http.MethodGet {
+		log.Errorf("Unsupported method %s", req.Method)
+		w.WriteHeader(http.StatusBadRequest)
+		return
 	}
 
+	pve := PropertyValuesEqualsRequest{}
+	if err := json.NewDecoder(req.Body).Decode(&pve); err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+	b := p.provider.PropertyValuesEqual(pve.Name, pve.Previous, pve.Current)
+	r := PropertyValuesEqualsResponse{
+		Equals: b,
+	}
+	out, err := json.Marshal(&r)
+	if err != nil {
+		log.Error(err)
+	}
+	w.Write(out)
 }
 
-func (p *HTTPProvider) Negotiate(w http.ResponseWriter, req *http.Request) {
+func (p *HTTPProvider) adjustEndpointsHandler(w http.ResponseWriter, req *http.Request) {
+	if req.Method != http.MethodGet {
+		log.Errorf("Unsupported method %s", req.Method)
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	pve := []*endpoint.Endpoint{}
+	if err := json.NewDecoder(req.Body).Decode(&pve); err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+	pve = p.provider.AdjustEndpoints(pve)
+	out, err := json.Marshal(&pve)
+	if err != nil {
+		log.Error(err)
+	}
+	w.Write(out)
+}
+
+func (p *HTTPProvider) negotiate(w http.ResponseWriter, req *http.Request) {
 	w.Header().Set(varyHeader, contentTypeHeader)
 	w.Header().Set(contentTypeHeader, mediaTypeFormatAndVersion)
-	w.WriteHeader(200)
+	w.WriteHeader(http.StatusOK)
 }
 
+// StartHTTPApi starts a HTTP server given any provider.
+// the function takes an optional channel as input which is used to signal that the server has started.
+// The server will listen on port 8888.
+// The server will respond to the following endpoints:
+// - /records (GET): returns the current records
+// - /records (POST): applies the changes
+// - /propertyvaluesequal (GET): executes the PropertyValuesEqual method
+// - /adjustendpoints (GET): executes the AdjustEndpoints method
 func StartHTTPApi(provider provider.Provider, startedChan chan struct{}) {
 	p := HTTPProvider{
 		provider: provider,
 	}
 
 	m := http.NewServeMux()
-	m.HandleFunc("/", p.Negotiate)
+	m.HandleFunc("/", p.negotiate)
 	m.HandleFunc("/records", p.recordsHandler)
-	m.HandleFunc("/propertyvaluesequal", p.propertyValuesEquals)
-	m.HandleFunc("/adjustendpoints", p.adjustEndpoints)
+	m.HandleFunc("/propertyvaluesequal", p.propertyValuesEqualsHandler)
+	m.HandleFunc("/adjustendpoints", p.adjustEndpointsHandler)
 
 	// create a new http server
 	s := &http.Server{
@@ -140,7 +155,9 @@ func StartHTTPApi(provider provider.Provider, startedChan chan struct{}) {
 		log.Fatal(err)
 	}
 
-	startedChan <- struct{}{}
+	if startedChan != nil {
+		startedChan <- struct{}{}
+	}
 
 	if err := s.Serve(l); err != nil {
 		log.Fatal(err)
