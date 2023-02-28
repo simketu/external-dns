@@ -357,7 +357,7 @@ func main() {
 		p, err = tencentcloud.NewTencentCloudProvider(domainFilter, zoneIDFilter, cfg.TencentCloudConfigFile, cfg.TencentCloudZoneType, cfg.DryRun)
 	case "plugin":
 		startedChan := make(chan struct{})
-		awsProvider, err := aws.NewAWSProvider(aws.AWSConfig{
+		awsProvider, awsErr := aws.NewAWSProvider(aws.AWSConfig{
 			DomainFilter:         domainFilter,
 			ZoneIDFilter:         zoneIDFilter,
 			ZoneTypeFilter:       zoneTypeFilter,
@@ -372,8 +372,8 @@ func main() {
 			DryRun:               cfg.DryRun,
 			ZoneCacheDuration:    cfg.AWSZoneCacheDuration,
 		})
-		if err != nil {
-			log.Fatal(err)
+		if awsErr != nil {
+			log.Fatal(awsErr)
 		}
 		if cfg.RunAWSProviderAsPlugin {
 			go plugin.StartHTTPApi(awsProvider, startedChan)
