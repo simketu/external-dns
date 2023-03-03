@@ -73,8 +73,8 @@ func (p *HTTPProvider) recordsHandler(w http.ResponseWriter, req *http.Request) 
 	w.WriteHeader(http.StatusBadRequest)
 }
 
-func (p *HTTPProvider) propertyValuesEqualsHandler(w http.ResponseWriter, req *http.Request) {
-	if req.Method != http.MethodGet {
+func (p *HTTPProvider) propertyValuesEqualHandler(w http.ResponseWriter, req *http.Request) {
+	if req.Method != http.MethodPost {
 		log.Errorf("Unsupported method %s", req.Method)
 		w.WriteHeader(http.StatusBadRequest)
 		return
@@ -97,7 +97,7 @@ func (p *HTTPProvider) propertyValuesEqualsHandler(w http.ResponseWriter, req *h
 }
 
 func (p *HTTPProvider) adjustEndpointsHandler(w http.ResponseWriter, req *http.Request) {
-	if req.Method != http.MethodGet {
+	if req.Method != http.MethodPost {
 		log.Errorf("Unsupported method %s", req.Method)
 		w.WriteHeader(http.StatusBadRequest)
 		return
@@ -138,7 +138,7 @@ func StartHTTPApi(provider provider.Provider, startedChan chan struct{}) {
 	m := http.NewServeMux()
 	m.HandleFunc("/", p.negotiate)
 	m.HandleFunc("/records", p.recordsHandler)
-	m.HandleFunc("/propertyvaluesequal", p.propertyValuesEqualsHandler)
+	m.HandleFunc("/propertyvaluesequal", p.propertyValuesEqualHandler)
 	m.HandleFunc("/adjustendpoints", p.adjustEndpointsHandler)
 
 	// create a new http server

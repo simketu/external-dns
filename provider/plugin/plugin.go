@@ -220,7 +220,7 @@ func (p PluginProvider) ApplyChanges(ctx context.Context, changes *plan.Changes)
 	return nil
 }
 
-// PropertyValuesEqual will call the provider doing a GET on `/propertyvaluesequal` which will return a boolean in the format
+// PropertyValuesEqual will call the provider doing a POST on `/propertyvaluesequal` which will return a boolean in the format
 // `{propertyvaluesequal: true}`
 // Errors in anything technically happening from the provider will return true so that no update is performed.
 // Errors will also be logged and exposed as metrics so that it is possible to alert on them if needed.
@@ -242,7 +242,7 @@ func (p PluginProvider) PropertyValuesEqual(name string, previous string, curren
 		return true
 	}
 
-	req, err := http.NewRequest("GET", u, bytes.NewBuffer(b))
+	req, err := http.NewRequest("POST", u, bytes.NewBuffer(b))
 	if err != nil {
 		propertyValuesEqualErrorsGauge.Inc()
 		log.Debugf("error creating request: %s", err)
@@ -278,7 +278,7 @@ func (p PluginProvider) PropertyValuesEqual(name string, previous string, curren
 	return r.Equals
 }
 
-// AdjustEndpoints will call the provider doing a GET on `/adjustendpoints` which will return a list of modified endpoints
+// AdjustEndpoints will call the provider doing a POST on `/adjustendpoints` which will return a list of modified endpoints
 // based on a provider specific requirement.
 // This method returns an empty slice in case there is a technical error on the provider's side so that no endpoints will be considered.
 func (p PluginProvider) AdjustEndpoints(e []*endpoint.Endpoint) []*endpoint.Endpoint {
@@ -295,7 +295,7 @@ func (p PluginProvider) AdjustEndpoints(e []*endpoint.Endpoint) []*endpoint.Endp
 		log.Debugf("error marshaling endpoints, %s", err)
 		return endpoints
 	}
-	req, err := http.NewRequest("GET", u, bytes.NewBuffer(b))
+	req, err := http.NewRequest("POST", u, bytes.NewBuffer(b))
 	if err != nil {
 		adjustEndpointsErrorsGauge.Inc()
 		log.Debugf("error creating new HTTP request, %s", err)

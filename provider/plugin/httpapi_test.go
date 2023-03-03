@@ -16,8 +16,186 @@ limitations under the License.
 
 package plugin
 
-import "testing"
+import (
+	"bytes"
+	"context"
+	"encoding/json"
+	"net/http"
+	"net/http/httptest"
+	"testing"
 
-func TestRecordsHandler(t *testing.T) {
-	t.SkipNow()
+	"github.com/stretchr/testify/require"
+	"sigs.k8s.io/external-dns/endpoint"
+	"sigs.k8s.io/external-dns/plan"
+)
+
+type FakePluginProvider struct{}
+
+func (p FakePluginProvider) Records(ctx context.Context) ([]*endpoint.Endpoint, error) {
+	return []*endpoint.Endpoint{}, nil
+}
+
+func (p FakePluginProvider) ApplyChanges(ctx context.Context, changes *plan.Changes) error {
+	return nil
+}
+
+func (p FakePluginProvider) PropertyValuesEqual(name string, previous string, current string) bool {
+	return false
+}
+
+func (p FakePluginProvider) AdjustEndpoints(endpoints []*endpoint.Endpoint) []*endpoint.Endpoint {
+	return endpoints
+}
+
+func (p FakePluginProvider) GetDomainFilter() endpoint.DomainFilterInterface {
+	return endpoint.DomainFilter{}
+}
+
+func TestRecordsHandlerRecords(t *testing.T) {
+	req := httptest.NewRequest(http.MethodGet, "/records", nil)
+	w := httptest.NewRecorder()
+
+	httpProvider := &HTTPProvider{
+		provider: &FakePluginProvider{},
+	}
+	httpProvider.recordsHandler(w, req)
+	res := w.Result()
+	require.Equal(t, http.StatusOK, res.StatusCode)
+}
+
+func TestRecordsHandlerApplyChangesWithBadRequest(t *testing.T) {
+	req := httptest.NewRequest(http.MethodPost, "/applychanges", nil)
+	w := httptest.NewRecorder()
+
+	httpProvider := &HTTPProvider{
+		provider: &FakePluginProvider{},
+	}
+	httpProvider.recordsHandler(w, req)
+	res := w.Result()
+	require.Equal(t, http.StatusBadRequest, res.StatusCode)
+}
+
+func TestRecordsHandlerApplyChangesWithValidRequest(t *testing.T) {
+	// buffer
+	changes := &plan.Changes{
+		Create: []*endpoint.Endpoint{
+			{
+				DNSName:    "foo.bar.com",
+				RecordType: "A",
+				Targets:    endpoint.Targets{},
+			},
+		},
+	}
+	j, err := json.Marshal(changes)
+	require.Nil(t, err)
+
+	reader := bytes.NewReader(j)
+
+	req := httptest.NewRequest(http.MethodPost, "/applychanges", reader)
+	w := httptest.NewRecorder()
+
+	httpProvider := &HTTPProvider{
+		provider: &FakePluginProvider{},
+	}
+	httpProvider.recordsHandler(w, req)
+	res := w.Result()
+	require.Equal(t, http.StatusOK, res.StatusCode)
+}
+
+func TestPropertyValuesEqualHandlerWithInvalidRequests(t *testing.T) {
+	req := httptest.NewRequest(http.MethodPost, "/propertyvaluesequals", nil)
+	w := httptest.NewRecorder()
+
+	httpProvider := &HTTPProvider{
+		provider: &FakePluginProvider{},
+	}
+	httpProvider.propertyValuesEqualHandler(w, req)
+	res := w.Result()
+	require.Equal(t, http.StatusBadRequest, res.StatusCode)
+
+	req = httptest.NewRequest(http.MethodGet, "/propertyvaluesequals", nil)
+
+	httpProvider.propertyValuesEqualHandler(w, req)
+	res = w.Result()
+	require.Equal(t, http.StatusBadRequest, res.StatusCode)
+}
+
+func TestPropertyValuesEqualWithValidRequest(t *testing.T) {
+	pve := &PropertyValuesEqualsRequest{
+		Name:     "foo",
+		Previous: "bar",
+		Current:  "baz",
+	}
+
+	j, err := json.Marshal(pve)
+	require.Nil(t, err)
+
+	reader := bytes.NewReader(j)
+	req := httptest.NewRequest(http.MethodPost, "/propertyvaluesequals", reader)
+	w := httptest.NewRecorder()
+
+	httpProvider := &HTTPProvider{
+		provider: &FakePluginProvider{},
+	}
+	httpProvider.propertyValuesEqualHandler(w, req)
+	res := w.Result()
+	require.Equal(t, http.StatusOK, res.StatusCode)
+	require.NotNil(t, res.Body)
+}
+
+func TestAdjustEndpointsHandlerWithInvalidRequest(t *testing.T) {
+	req := httptest.NewRequest(http.MethodPost, "/adjustendpoints", nil)
+	w := httptest.NewRecorder()
+
+	httpProvider := &HTTPProvider{
+		provider: &FakePluginProvider{},
+	}
+	httpProvider.adjustEndpointsHandler(w, req)
+	res := w.Result()
+	require.Equal(t, http.StatusBadRequest, res.StatusCode)
+
+	req = httptest.NewRequest(http.MethodGet, "/adjustendpoints", nil)
+
+	httpProvider.adjustEndpointsHandler(w, req)
+	res = w.Result()
+	require.Equal(t, http.StatusBadRequest, res.StatusCode)
+}
+
+func TestAdjustEndpointsWithValidRequest(t *testing.T) {
+	pve := []*endpoint.Endpoint{
+		{
+			DNSName:    "foo.bar.com",
+			RecordType: "A",
+			Targets:    endpoint.Targets{},
+			RecordTTL:  0,
+		},
+	}
+
+	j, err := json.Marshal(pve)
+	require.Nil(t, err)
+
+	reader := bytes.NewReader(j)
+	req := httptest.NewRequest(http.MethodPost, "/adjustendpoints", reader)
+	w := httptest.NewRecorder()
+
+	httpProvider := &HTTPProvider{
+		provider: &FakePluginProvider{},
+	}
+	httpProvider.adjustEndpointsHandler(w, req)
+	res := w.Result()
+	require.Equal(t, http.StatusOK, res.StatusCode)
+	require.NotNil(t, res.Body)
+}
+
+func TestNegotiate(t *testing.T) {
+	req := httptest.NewRequest(http.MethodGet, "/", nil)
+	w := httptest.NewRecorder()
+	httpProvider := &HTTPProvider{
+		provider: &FakePluginProvider{},
+	}
+	httpProvider.negotiate(w, req)
+	res := w.Result()
+	require.Equal(t, contentTypeHeader, res.Header.Get(varyHeader))
+	require.Equal(t, mediaTypeFormatAndVersion, res.Header.Get(contentTypeHeader))
+	require.Equal(t, http.StatusOK, res.StatusCode)
 }
