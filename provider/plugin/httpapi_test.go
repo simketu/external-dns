@@ -76,7 +76,6 @@ func TestRecordsHandlerApplyChangesWithBadRequest(t *testing.T) {
 }
 
 func TestRecordsHandlerApplyChangesWithValidRequest(t *testing.T) {
-	// buffer
 	changes := &plan.Changes{
 		Create: []*endpoint.Endpoint{
 			{
