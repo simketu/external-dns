@@ -582,8 +582,8 @@ func (cfg *Config) ParseFlags(args []string) error {
 	app.Flag("log-level", "Set the level of logging. (default: info, options: panic, debug, info, warning, error, fatal").Default(defaultConfig.LogLevel).EnumVar(&cfg.LogLevel, allLogLevelsAsStrings()...)
 
 	// Plugin provider
-	app.Flag("plugin-provider-url", "The URL of the remote endpoint to call for the plugin provider (default: :8888)").Default(defaultConfig.PluginProviderURL).StringVar(&cfg.PluginProviderURL)
-	app.Flag("run-aws-provider-as-plugin", "When enabled, the AWS provider will be run as a plugin (default: false). To be used together with 'plugin' as provider.").BoolVar(&cfg.RunAWSProviderAsPlugin)
+	app.Flag("plugin-provider-url", "[EXPERIMENTAL] The URL of the remote endpoint to call for the plugin provider (default: :8888)").Default(defaultConfig.PluginProviderURL).StringVar(&cfg.PluginProviderURL)
+	app.Flag("run-aws-provider-as-plugin", "[EXPERIMENTAL] When enabled, the AWS provider will be run as a plugin (default: false). To be used together with 'plugin' as provider.").BoolVar(&cfg.RunAWSProviderAsPlugin)
 
 	_, err := app.Parse(args)
 	if err != nil {
