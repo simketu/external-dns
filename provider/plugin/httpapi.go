@@ -128,9 +128,9 @@ func (p *HTTPProvider) negotiate(w http.ResponseWriter, req *http.Request) {
 // The server will respond to the following endpoints:
 // - /records (GET): returns the current records
 // - /records (POST): applies the changes
-// - /propertyvaluesequal (GET): executes the PropertyValuesEqual method
-// - /adjustendpoints (GET): executes the AdjustEndpoints method
-func StartHTTPApi(provider provider.Provider, startedChan chan struct{}) {
+// - /propertyvaluesequal (POST): executes the PropertyValuesEqual method
+// - /adjustendpoints (POST): executes the AdjustEndpoints method
+func StartHTTPApi(provider provider.Provider, startedChan chan struct{}, readTimeout time.Duration, writeTimeout time.Duration, providerPort string) {
 	p := HTTPProvider{
 		provider: provider,
 	}
@@ -141,14 +141,11 @@ func StartHTTPApi(provider provider.Provider, startedChan chan struct{}) {
 	m.HandleFunc("/propertyvaluesequal", p.propertyValuesEqualHandler)
 	m.HandleFunc("/adjustendpoints", p.adjustEndpointsHandler)
 
-	// create a new http server
 	s := &http.Server{
-		Addr:    ":8888",
-		Handler: m,
-		// set timeouts so that a slow or malicious client doesn't
-		// hold resources forever
-		ReadTimeout:  5 * time.Second,
-		WriteTimeout: 10 * time.Second,
+		Addr:         providerPort,
+		Handler:      m,
+		ReadTimeout:  readTimeout,
+		WriteTimeout: writeTimeout,
 	}
 
 	l, err := net.Listen("tcp", ":8888")

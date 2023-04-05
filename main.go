@@ -377,7 +377,7 @@ func main() {
 			log.Fatal(awsErr)
 		}
 		if cfg.RunAWSProviderAsPlugin {
-			go plugin.StartHTTPApi(awsProvider, startedChan)
+			go plugin.StartHTTPApi(awsProvider, startedChan, cfg.PluginProviderReadTimeout, cfg.PluginProviderWriteTimeout, cfg.PluginProviderAddress)
 		}
 		<-startedChan
 		p, err = plugin.NewPluginProvider(cfg.PluginProviderURL)

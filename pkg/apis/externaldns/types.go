@@ -201,6 +201,9 @@ type Config struct {
 	PluralProvider                    string
 	PluginProviderURL                 string
 	RunAWSProviderAsPlugin            bool
+	PluginProviderReadTimeout         time.Duration
+	PluginProviderWriteTimeout        time.Duration
+	PluginProviderAddress             string
 }
 
 var defaultConfig = &Config{
@@ -344,6 +347,9 @@ var defaultConfig = &Config{
 	PluralCluster:               "",
 	PluralProvider:              "",
 	PluginProviderURL:           "http://localhost:8888",
+	PluginProviderReadTimeout:   5 * time.Second,
+	PluginProviderWriteTimeout:  10 * time.Second,
+	PluginProviderAddress:       ":8888",
 }
 
 // NewConfig returns new Config object
@@ -584,6 +590,9 @@ func (cfg *Config) ParseFlags(args []string) error {
 	// Plugin provider
 	app.Flag("plugin-provider-url", "[EXPERIMENTAL] The URL of the remote endpoint to call for the plugin provider (default: :8888)").Default(defaultConfig.PluginProviderURL).StringVar(&cfg.PluginProviderURL)
 	app.Flag("run-aws-provider-as-plugin", "[EXPERIMENTAL] When enabled, the AWS provider will be run as a plugin (default: false). To be used together with 'plugin' as provider.").BoolVar(&cfg.RunAWSProviderAsPlugin)
+	app.Flag("plugin-provider-read-timeout", "[EXPERIMENTAL] The read timeout for the plugin provider in duration format (default: 5s)").Default(defaultConfig.PluginProviderReadTimeout.String()).DurationVar(&cfg.PluginProviderReadTimeout)
+	app.Flag("plugin-provider-write-timeout", "[EXPERIMENTAL] The write timeout for the plugin provider in duration format (default: 10s)").Default(defaultConfig.PluginProviderWriteTimeout.String()).DurationVar(&cfg.PluginProviderWriteTimeout)
+	app.Flag("plugin-provider-address", "[EXPERIMENTAL] The address to listen on for the plugin provider (default: :8888)").Default(defaultConfig.PluginProviderAddress).StringVar(&cfg.PluginProviderAddress)
 
 	_, err := app.Parse(args)
 	if err != nil {
