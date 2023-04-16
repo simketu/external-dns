@@ -66,6 +66,7 @@ func (p *HTTPProvider) recordsHandler(w http.ResponseWriter, req *http.Request) 
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
+		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
 		return
 	}
@@ -93,6 +94,7 @@ func (p *HTTPProvider) propertyValuesEqualHandler(w http.ResponseWriter, req *ht
 	if err != nil {
 		log.Error(err)
 	}
+	w.Header().Set("Content-Type", "application/json")
 	w.Write(out)
 }
 
@@ -113,6 +115,7 @@ func (p *HTTPProvider) adjustEndpointsHandler(w http.ResponseWriter, req *http.R
 	if err != nil {
 		log.Error(err)
 	}
+	w.Header().Set("Content-Type", "application/json")
 	w.Write(out)
 }
 
