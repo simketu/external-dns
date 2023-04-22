@@ -358,25 +358,25 @@ func main() {
 		p, err = tencentcloud.NewTencentCloudProvider(domainFilter, zoneIDFilter, cfg.TencentCloudConfigFile, cfg.TencentCloudZoneType, cfg.DryRun)
 	case "plugin":
 		startedChan := make(chan struct{})
-		awsProvider, awsErr := aws.NewAWSProvider(aws.AWSConfig{
-			DomainFilter:         domainFilter,
-			ZoneIDFilter:         zoneIDFilter,
-			ZoneTypeFilter:       zoneTypeFilter,
-			ZoneTagFilter:        zoneTagFilter,
-			BatchChangeSize:      cfg.AWSBatchChangeSize,
-			BatchChangeInterval:  cfg.AWSBatchChangeInterval,
-			EvaluateTargetHealth: cfg.AWSEvaluateTargetHealth,
-			AssumeRole:           cfg.AWSAssumeRole,
-			AssumeRoleExternalID: cfg.AWSAssumeRoleExternalID,
-			APIRetries:           cfg.AWSAPIRetries,
-			PreferCNAME:          cfg.AWSPreferCNAME,
-			DryRun:               cfg.DryRun,
-			ZoneCacheDuration:    cfg.AWSZoneCacheDuration,
-		})
-		if awsErr != nil {
-			log.Fatal(awsErr)
-		}
 		if cfg.RunAWSProviderAsPlugin {
+			awsProvider, awsErr := aws.NewAWSProvider(aws.AWSConfig{
+				DomainFilter:         domainFilter,
+				ZoneIDFilter:         zoneIDFilter,
+				ZoneTypeFilter:       zoneTypeFilter,
+				ZoneTagFilter:        zoneTagFilter,
+				BatchChangeSize:      cfg.AWSBatchChangeSize,
+				BatchChangeInterval:  cfg.AWSBatchChangeInterval,
+				EvaluateTargetHealth: cfg.AWSEvaluateTargetHealth,
+				AssumeRole:           cfg.AWSAssumeRole,
+				AssumeRoleExternalID: cfg.AWSAssumeRoleExternalID,
+				APIRetries:           cfg.AWSAPIRetries,
+				PreferCNAME:          cfg.AWSPreferCNAME,
+				DryRun:               cfg.DryRun,
+				ZoneCacheDuration:    cfg.AWSZoneCacheDuration,
+			})
+			if awsErr != nil {
+				log.Fatal(awsErr)
+			}
 			go plugin.StartHTTPApi(awsProvider, startedChan, cfg.PluginProviderReadTimeout, cfg.PluginProviderWriteTimeout, cfg.PluginProviderAddress)
 		}
 		<-startedChan
