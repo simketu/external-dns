@@ -132,7 +132,7 @@ var (
 		PluginProviderURL:           "http://localhost:8888",
 		PluginProviderReadTimeout:   5 * time.Second,
 		PluginProviderWriteTimeout:  10 * time.Second,
-		PluginProviderAddress:       ":8888",
+		PluginProviderAddress:       "127.0.0.1:8888",
 	}
 
 	overriddenConfig = &Config{
@@ -246,7 +246,7 @@ var (
 		PluginProviderURL:           "http://localhost:8888",
 		PluginProviderReadTimeout:   5 * time.Second,
 		PluginProviderWriteTimeout:  10 * time.Second,
-		PluginProviderAddress:       ":8888",
+		PluginProviderAddress:       "127.0.0.1:8888",
 	}
 )
 
