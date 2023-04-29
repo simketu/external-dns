@@ -132,7 +132,7 @@ type Config struct {
 	DynMinTTLSeconds                   int
 	OCIConfigFile                      string
 	OCICompartmentOCID                 string
-	OCIAuthInstancePrincipal           string
+	OCIAuthInstancePrincipal           bool
 	InMemoryZones                      []string
 	OVHEndpoint                        string
 	OVHApiRateLimit                    int
