@@ -135,7 +135,7 @@ func (p *HTTPProvider) negotiate(w http.ResponseWriter, req *http.Request) {
 // - /records (POST): applies the changes
 // - /propertyvaluesequal (POST): executes the PropertyValuesEqual method
 // - /adjustendpoints (POST): executes the AdjustEndpoints method
-func StartHTTPApi(provider provider.Provider, startedChan chan struct{}, readTimeout time.Duration, writeTimeout time.Duration, providerPort string) {
+func StartHTTPApi(provider provider.Provider, startedChan chan struct{}, readTimeout, writeTimeout time.Duration, providerPort string) {
 	p := HTTPProvider{
 		provider: provider,
 	}
