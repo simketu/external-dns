@@ -378,8 +378,8 @@ func main() {
 				log.Fatal(awsErr)
 			}
 			go plugin.StartHTTPApi(awsProvider, startedChan, cfg.PluginProviderReadTimeout, cfg.PluginProviderWriteTimeout, cfg.PluginProviderAddress)
+			<-startedChan
 		}
-		<-startedChan
 		p, err = plugin.NewPluginProvider(cfg.PluginProviderURL)
 	default:
 		log.Fatalf("unknown dns provider: %s", cfg.Provider)
