@@ -45,7 +45,8 @@ type PropertyValuesEqualsResponse struct {
 }
 
 func (p *HTTPProvider) recordsHandler(w http.ResponseWriter, req *http.Request) {
-	if req.Method == http.MethodGet { // records
+	switch req.Method {
+	case http.MethodGet:
 		records, err := p.provider.Records(context.Background())
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
@@ -55,7 +56,7 @@ func (p *HTTPProvider) recordsHandler(w http.ResponseWriter, req *http.Request) 
 		w.WriteHeader(http.StatusOK)
 		json.NewEncoder(w).Encode(records)
 		return
-	} else if req.Method == http.MethodPost { // applychanges
+	case http.MethodPost:
 		var changes plan.Changes
 		if err := json.NewDecoder(req.Body).Decode(&changes); err != nil {
 			w.WriteHeader(http.StatusBadRequest)
@@ -69,9 +70,10 @@ func (p *HTTPProvider) recordsHandler(w http.ResponseWriter, req *http.Request) 
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
 		return
+	default:
+		log.Errorf("Unsupported method %s", req.Method)
+		w.WriteHeader(http.StatusBadRequest)
 	}
-	log.Errorf("Unsupported method %s", req.Method)
-	w.WriteHeader(http.StatusBadRequest)
 }
 
 func (p *HTTPProvider) propertyValuesEqualHandler(w http.ResponseWriter, req *http.Request) {
