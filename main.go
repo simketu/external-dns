@@ -18,6 +18,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"os"
 	"os/signal"
@@ -140,6 +141,8 @@ func main() {
 		RequestTimeout:                 cfg.RequestTimeout,
 		DefaultTargets:                 cfg.DefaultTargets,
 		OCPRouterName:                  cfg.OCPRouterName,
+		UpdateEvents:                   cfg.UpdateEvents,
+		ResolveLoadBalancerHostname:    cfg.ResolveServiceLoadBalancerHostname,
 	}
 
 	// Lookup all the selected sources by names and pass them the desired configuration.
@@ -313,7 +316,19 @@ func main() {
 		)
 	case "oci":
 		var config *oci.OCIConfig
-		config, err = oci.LoadOCIConfig(cfg.OCIConfigFile)
+		// if the instance-principals flag was set, and a compartment OCID was provided, then ignore the
+		// OCI config file, and provide a config that uses instance principal authentication.
+		if cfg.OCIAuthInstancePrincipal {
+			if len(cfg.OCICompartmentOCID) == 0 {
+				err = fmt.Errorf("instance principal authentication requested, but no compartment OCID provided")
+			} else {
+				authConfig := oci.OCIAuthConfig{UseInstancePrincipal: true}
+				config = &oci.OCIConfig{Auth: authConfig, CompartmentID: cfg.OCICompartmentOCID}
+			}
+		} else {
+			config, err = oci.LoadOCIConfig(cfg.OCIConfigFile)
+		}
+
 		if err == nil {
 			p, err = oci.NewOCIProvider(*config, domainFilter, zoneIDFilter, cfg.DryRun)
 		}

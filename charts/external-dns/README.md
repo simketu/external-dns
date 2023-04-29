@@ -86,13 +86,13 @@ The following table lists the configurable parameters of the _ExternalDNS_ chart
 
 ## Namespaced scoped installation
 
-external-dns supports running on a namespaced only scope, too. 
+external-dns supports running on a namespaced only scope, too.
 If `namespaced=true` is defined, the helm chart will setup `Roles` and `RoleBindings` instead `ClusterRoles` and `ClusterRoleBindings`.
 
 ### Limited supported
 Not all sources are supported in namespaced scope, since some sources depends on cluster-wide resources.
 For example: Source `node` isn't supported, since `kind: Node` has scope `Cluster`.
-Sources like `istio-virtualservice` only work, if all resources like `Gateway` and `VirtualService` are present in the same 
+Sources like `istio-virtualservice` only work, if all resources like `Gateway` and `VirtualService` are present in the same
 namespaces as `external-dns`.
 
 The annotation `external-dns.alpha.kubernetes.io/endpoints-type: NodeExternalIP` is not supported.
