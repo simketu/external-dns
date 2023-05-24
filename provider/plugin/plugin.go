@@ -116,10 +116,16 @@ func NewPluginProvider(u string) (*PluginProvider, error) {
 	err = backoff.Retry(func() error {
 		resp, err = client.Do(req)
 		if err != nil {
-			log.Printf("error connecting to plugin api: %v", err)
+			if resp.StatusCode < 500 {
+				return backoff.Permanent(err)
+			}
 		}
 		return err
 	}, backoff.WithMaxRetries(backoff.NewExponentialBackOff(), maxRetries))
+
+	if err != nil {
+		return nil, fmt.Errorf("Failed to connect to plugin api: %v", err)
+	}
 
 	vary := resp.Header.Get(varyHeader)
 	contentType := resp.Header.Get(contentTypeHeader)
