@@ -116,15 +116,17 @@ func NewPluginProvider(u string) (*PluginProvider, error) {
 	err = backoff.Retry(func() error {
 		resp, err = client.Do(req)
 		if err != nil {
-			if resp.StatusCode < 500 {
-				return backoff.Permanent(err)
-			}
+			log.Debugf("Failed to connect to plugin api: %v", err)
+		}
+		// we currently only use 200 as success, but considering okay all 2XX for future usage
+		if resp.StatusCode >= 300 && resp.StatusCode < 500 {
+			return backoff.Permanent(fmt.Errorf("status code < 500"))
 		}
 		return err
 	}, backoff.WithMaxRetries(backoff.NewExponentialBackOff(), maxRetries))
 
 	if err != nil {
-		return nil, fmt.Errorf("Failed to connect to plugin api: %v", err)
+		return nil, fmt.Errorf("failed to connect to plugin api: %v", err)
 	}
 
 	vary := resp.Header.Get(varyHeader)
@@ -169,7 +171,7 @@ func (p PluginProvider) Records(ctx context.Context) ([]*endpoint.Endpoint, erro
 	if resp.StatusCode != http.StatusOK {
 		recordsErrorsGauge.Inc()
 		log.Debugf("Failed to get records with code %d", resp.StatusCode)
-		return nil, fmt.Errorf("Failed to get records with code %d", resp.StatusCode)
+		return nil, fmt.Errorf("failed to get records with code %d", resp.StatusCode)
 	}
 
 	b, err := io.ReadAll(resp.Body)
@@ -221,7 +223,7 @@ func (p PluginProvider) ApplyChanges(ctx context.Context, changes *plan.Changes)
 	if resp.StatusCode != http.StatusOK {
 		applyChangesErrorsGauge.Inc()
 		log.Debugf("Failed to apply changes with code %d", resp.StatusCode)
-		return fmt.Errorf("Failed to apply changes with code %d", resp.StatusCode)
+		return fmt.Errorf("failed to apply changes with code %d", resp.StatusCode)
 	}
 	return nil
 }

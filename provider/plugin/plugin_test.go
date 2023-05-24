@@ -28,6 +28,24 @@ import (
 	"sigs.k8s.io/external-dns/endpoint"
 )
 
+func TestWronglyConfiguredNewPluginProvider(t *testing.T) {
+	svr := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/" {
+			w.Header().Set(varyHeader, contentTypeHeader)
+			w.Header().Set(contentTypeHeader, mediaTypeFormatAndVersion)
+			w.WriteHeader(400)
+			return
+		}
+		w.Write([]byte(`[{
+			"dnsName" : "test.example.com"
+		}]`))
+	}))
+	defer svr.Close()
+
+	_, err := NewPluginProvider(svr.URL)
+	require.Error(t, err)
+}
+
 func TestRecords(t *testing.T) {
 	svr := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path == "/" {
