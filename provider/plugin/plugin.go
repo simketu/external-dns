@@ -143,33 +143,33 @@ func (p PluginProvider) Records(ctx context.Context) ([]*endpoint.Endpoint, erro
 	u, err := url.JoinPath(p.remoteServerURL.String(), "records")
 	if err != nil {
 		recordsErrorsGauge.Inc()
-		log.Debugf("error joining path: %s", err.Error())
+		log.Debugf("Failed to join path: %s", err.Error())
 		return nil, err
 	}
 	req, err := http.NewRequest("GET", u, nil)
 	if err != nil {
 		recordsErrorsGauge.Inc()
-		log.Debugf("error creating request: %s", err.Error())
+		log.Debugf("Failed to create request: %s", err.Error())
 		return nil, err
 	}
 	resp, err := p.client.Do(req)
 	if err != nil {
 		recordsErrorsGauge.Inc()
-		log.Debugf("error performing request: %s", err.Error())
+		log.Debugf("Failed to perform request: %s", err.Error())
 		return nil, err
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
 		recordsErrorsGauge.Inc()
-		log.Debugf("error from external provider, HTTP status code %d", resp.StatusCode)
-		return nil, fmt.Errorf("failed to apply changes with code %d", resp.StatusCode)
+		log.Debugf("Failed to get records with code %d", resp.StatusCode)
+		return nil, fmt.Errorf("Failed to get records with code %d", resp.StatusCode)
 	}
 
 	b, err := io.ReadAll(resp.Body)
 	if err != nil {
 		recordsErrorsGauge.Inc()
-		log.Debugf("error reading response body: %s", err.Error())
+		log.Debugf("Failed to read response body: %s", err.Error())
 		return nil, err
 	}
 
@@ -177,7 +177,7 @@ func (p PluginProvider) Records(ctx context.Context) ([]*endpoint.Endpoint, erro
 	err = json.Unmarshal(b, &endpoints)
 	if err != nil {
 		recordsErrorsGauge.Inc()
-		log.Debugf("error unmarshaling response body: %s", err.Error())
+		log.Debugf("Failed to unmarshal response body: %s", err.Error())
 		return nil, err
 	}
 	return endpoints, nil
@@ -188,34 +188,34 @@ func (p PluginProvider) ApplyChanges(ctx context.Context, changes *plan.Changes)
 	u, err := url.JoinPath(p.remoteServerURL.String(), "records")
 	if err != nil {
 		applyChangesErrorsGauge.Inc()
-		log.Debugf("error joining path: %s", err.Error())
+		log.Debugf("Failed to join path: %s", err.Error())
 		return err
 	}
 	b, err := json.Marshal(changes)
 	if err != nil {
 		applyChangesErrorsGauge.Inc()
-		log.Debugf("error marshaling changes: %s", err.Error())
+		log.Debugf("Failed to marshal changes: %s", err.Error())
 		return err
 	}
 
 	req, err := http.NewRequest("POST", u, bytes.NewBuffer(b))
 	if err != nil {
 		applyChangesErrorsGauge.Inc()
-		log.Debugf("error creating request: %s", err.Error())
+		log.Debugf("Failed to create request: %s", err.Error())
 		return err
 	}
 	resp, err := p.client.Do(req)
 	if err != nil {
 		applyChangesErrorsGauge.Inc()
-		log.Debugf("error performing request: %s", err.Error())
+		log.Debugf("Failed to perform request: %s", err.Error())
 		return err
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
 		applyChangesErrorsGauge.Inc()
-		log.Debugf("error from external provider, HTTP status code %d", resp.StatusCode)
-		return fmt.Errorf("failed to apply changes with code %d", resp.StatusCode)
+		log.Debugf("Failed to apply changes with code %d", resp.StatusCode)
+		return fmt.Errorf("Failed to apply changes with code %d", resp.StatusCode)
 	}
 	return nil
 }
@@ -228,7 +228,7 @@ func (p PluginProvider) PropertyValuesEqual(name string, previous string, curren
 	u, err := url.JoinPath(p.remoteServerURL.String(), "propertyvaluesequal")
 	if err != nil {
 		propertyValuesEqualErrorsGauge.Inc()
-		log.Debugf("error joining path: %s", err)
+		log.Debugf("Failed to join path: %s", err)
 		return true
 	}
 	b, err := json.Marshal(&PropertyValuesEqualRequest{
@@ -238,41 +238,41 @@ func (p PluginProvider) PropertyValuesEqual(name string, previous string, curren
 	})
 	if err != nil {
 		propertyValuesEqualErrorsGauge.Inc()
-		log.Debugf("error marshaling request: %s", err)
+		log.Debugf("Failed to marshal request: %s", err)
 		return true
 	}
 
 	req, err := http.NewRequest("POST", u, bytes.NewBuffer(b))
 	if err != nil {
 		propertyValuesEqualErrorsGauge.Inc()
-		log.Debugf("error creating request: %s", err)
+		log.Debugf("Failed to create request: %s", err)
 		return true
 	}
 	resp, err := p.client.Do(req)
 	if err != nil {
 		propertyValuesEqualErrorsGauge.Inc()
-		log.Debugf("error performing request: %s", err)
+		log.Debugf("Failed to perform request: %s", err)
 		return true
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
 		propertyValuesEqualErrorsGauge.Inc()
-		log.Debugf("failed to apply changes with code %d", resp.StatusCode)
+		log.Debugf("Failed to run PropertyValuesEqual with code %d", resp.StatusCode)
 		return true
 	}
 
 	respoBody, err := io.ReadAll(resp.Body)
 	if err != nil {
 		propertyValuesEqualErrorsGauge.Inc()
-		log.Errorf("failed to read body: %v", err)
+		log.Errorf("Failed to read body: %v", err)
 		return true
 	}
 	r := PropertyValuesEqualResponse{}
 	err = json.Unmarshal(respoBody, &r)
 	if err != nil {
 		propertyValuesEqualErrorsGauge.Inc()
-		log.Errorf("failed to unmarshal body: %v", err)
+		log.Errorf("Failed to unmarshal body: %v", err)
 		return true
 	}
 	return r.Equals
@@ -286,46 +286,46 @@ func (p PluginProvider) AdjustEndpoints(e []*endpoint.Endpoint) []*endpoint.Endp
 	u, err := url.JoinPath(p.remoteServerURL.String(), "adjustendpoints")
 	if err != nil {
 		adjustEndpointsErrorsGauge.Inc()
-		log.Debugf("error joining path, %s", err)
+		log.Debugf("Failed to join path, %s", err)
 		return endpoints
 	}
 	b, err := json.Marshal(e)
 	if err != nil {
 		adjustEndpointsErrorsGauge.Inc()
-		log.Debugf("error marshaling endpoints, %s", err)
+		log.Debugf("Failed to marshal endpoints, %s", err)
 		return endpoints
 	}
 	req, err := http.NewRequest("POST", u, bytes.NewBuffer(b))
 	if err != nil {
 		adjustEndpointsErrorsGauge.Inc()
-		log.Debugf("error creating new HTTP request, %s", err)
+		log.Debugf("Failed to create new HTTP request, %s", err)
 		return endpoints
 	}
 	resp, err := p.client.Do(req)
 	if err != nil {
 		adjustEndpointsErrorsGauge.Inc()
-		log.Debugf("error in http request, %s", err)
+		log.Debugf("Failed executing http request, %s", err)
 		return endpoints
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
 		adjustEndpointsErrorsGauge.Inc()
-		log.Debugf("error from external provider, HTTP status code %d", resp.StatusCode)
+		log.Debugf("Failed to AdjustEndpoints with code %d", resp.StatusCode)
 		return endpoints
 	}
 
 	b, err = io.ReadAll(resp.Body)
 	if err != nil {
 		adjustEndpointsErrorsGauge.Inc()
-		log.Debugf("error reading response body, %s", err)
+		log.Debugf("Failed to read response body, %s", err)
 		return endpoints
 	}
 
 	err = json.Unmarshal(b, &endpoints)
 	if err != nil {
 		adjustEndpointsErrorsGauge.Inc()
-		log.Debugf("error unmarshaling response body, %s", err)
+		log.Debugf("Faile to unmarshal response body, %s", err)
 		return endpoints
 	}
 	return endpoints
