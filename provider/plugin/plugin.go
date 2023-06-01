@@ -117,12 +117,13 @@ func NewPluginProvider(u string) (*PluginProvider, error) {
 		resp, err = client.Do(req)
 		if err != nil {
 			log.Debugf("Failed to connect to plugin api: %v", err)
+			return err
 		}
 		// we currently only use 200 as success, but considering okay all 2XX for future usage
 		if resp.StatusCode >= 300 && resp.StatusCode < 500 {
 			return backoff.Permanent(fmt.Errorf("status code < 500"))
 		}
-		return err
+		return nil
 	}, backoff.WithMaxRetries(backoff.NewExponentialBackOff(), maxRetries))
 
 	if err != nil {
