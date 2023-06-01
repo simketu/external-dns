@@ -161,6 +161,7 @@ func (p PluginProvider) Records(ctx context.Context) ([]*endpoint.Endpoint, erro
 		log.Debugf("Failed to create request: %s", err.Error())
 		return nil, err
 	}
+	req.Header.Set(acceptHeader, mediaTypeFormatAndVersion)
 	resp, err := p.client.Do(req)
 	if err != nil {
 		recordsErrorsGauge.Inc()
@@ -213,6 +214,7 @@ func (p PluginProvider) ApplyChanges(ctx context.Context, changes *plan.Changes)
 		log.Debugf("Failed to create request: %s", err.Error())
 		return err
 	}
+	req.Header.Set(acceptHeader, mediaTypeFormatAndVersion)
 	resp, err := p.client.Do(req)
 	if err != nil {
 		applyChangesErrorsGauge.Inc()
@@ -257,6 +259,7 @@ func (p PluginProvider) PropertyValuesEqual(name string, previous string, curren
 		log.Debugf("Failed to create request: %s", err)
 		return true
 	}
+	req.Header.Set(acceptHeader, mediaTypeFormatAndVersion)
 	resp, err := p.client.Do(req)
 	if err != nil {
 		propertyValuesEqualErrorsGauge.Inc()
@@ -310,6 +313,7 @@ func (p PluginProvider) AdjustEndpoints(e []*endpoint.Endpoint) []*endpoint.Endp
 		log.Debugf("Failed to create new HTTP request, %s", err)
 		return endpoints
 	}
+	req.Header.Set(acceptHeader, mediaTypeFormatAndVersion)
 	resp, err := p.client.Do(req)
 	if err != nil {
 		adjustEndpointsErrorsGauge.Inc()
