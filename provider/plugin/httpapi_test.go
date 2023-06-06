@@ -56,10 +56,10 @@ func TestRecordsHandlerRecords(t *testing.T) {
 	req := httptest.NewRequest(http.MethodGet, "/records", nil)
 	w := httptest.NewRecorder()
 
-	httpProvider := &ProviderAPIServer{
+	providerAPIServer := &ProviderAPIServer{
 		provider: &FakePluginProvider{},
 	}
-	httpProvider.recordsHandler(w, req)
+	providerAPIServer.recordsHandler(w, req)
 	res := w.Result()
 	require.Equal(t, http.StatusOK, res.StatusCode)
 }
@@ -68,10 +68,10 @@ func TestRecordsHandlerApplyChangesWithBadRequest(t *testing.T) {
 	req := httptest.NewRequest(http.MethodPost, "/applychanges", nil)
 	w := httptest.NewRecorder()
 
-	httpProvider := &ProviderAPIServer{
+	providerAPIServer := &ProviderAPIServer{
 		provider: &FakePluginProvider{},
 	}
-	httpProvider.recordsHandler(w, req)
+	providerAPIServer.recordsHandler(w, req)
 	res := w.Result()
 	require.Equal(t, http.StatusBadRequest, res.StatusCode)
 }
@@ -94,10 +94,10 @@ func TestRecordsHandlerApplyChangesWithValidRequest(t *testing.T) {
 	req := httptest.NewRequest(http.MethodPost, "/applychanges", reader)
 	w := httptest.NewRecorder()
 
-	httpProvider := &ProviderAPIServer{
+	providerAPIServer := &ProviderAPIServer{
 		provider: &FakePluginProvider{},
 	}
-	httpProvider.recordsHandler(w, req)
+	providerAPIServer.recordsHandler(w, req)
 	res := w.Result()
 	require.Equal(t, http.StatusNoContent, res.StatusCode)
 }
@@ -106,16 +106,16 @@ func TestPropertyValuesEqualHandlerWithInvalidRequests(t *testing.T) {
 	req := httptest.NewRequest(http.MethodPost, "/propertyvaluesequals", nil)
 	w := httptest.NewRecorder()
 
-	httpProvider := &ProviderAPIServer{
+	providerAPIServer := &ProviderAPIServer{
 		provider: &FakePluginProvider{},
 	}
-	httpProvider.propertyValuesEqualHandler(w, req)
+	providerAPIServer.propertyValuesEqualHandler(w, req)
 	res := w.Result()
 	require.Equal(t, http.StatusBadRequest, res.StatusCode)
 
 	req = httptest.NewRequest(http.MethodGet, "/propertyvaluesequals", nil)
 
-	httpProvider.propertyValuesEqualHandler(w, req)
+	providerAPIServer.propertyValuesEqualHandler(w, req)
 	res = w.Result()
 	require.Equal(t, http.StatusBadRequest, res.StatusCode)
 }
@@ -134,10 +134,10 @@ func TestPropertyValuesEqualWithValidRequest(t *testing.T) {
 	req := httptest.NewRequest(http.MethodPost, "/propertyvaluesequals", reader)
 	w := httptest.NewRecorder()
 
-	httpProvider := &ProviderAPIServer{
+	providerAPIServer := &ProviderAPIServer{
 		provider: &FakePluginProvider{},
 	}
-	httpProvider.propertyValuesEqualHandler(w, req)
+	providerAPIServer.propertyValuesEqualHandler(w, req)
 	res := w.Result()
 	require.Equal(t, http.StatusOK, res.StatusCode)
 	require.NotNil(t, res.Body)
@@ -147,16 +147,16 @@ func TestAdjustEndpointsHandlerWithInvalidRequest(t *testing.T) {
 	req := httptest.NewRequest(http.MethodPost, "/adjustendpoints", nil)
 	w := httptest.NewRecorder()
 
-	httpProvider := &ProviderAPIServer{
+	providerAPIServer := &ProviderAPIServer{
 		provider: &FakePluginProvider{},
 	}
-	httpProvider.adjustEndpointsHandler(w, req)
+	providerAPIServer.adjustEndpointsHandler(w, req)
 	res := w.Result()
 	require.Equal(t, http.StatusBadRequest, res.StatusCode)
 
 	req = httptest.NewRequest(http.MethodGet, "/adjustendpoints", nil)
 
-	httpProvider.adjustEndpointsHandler(w, req)
+	providerAPIServer.adjustEndpointsHandler(w, req)
 	res = w.Result()
 	require.Equal(t, http.StatusBadRequest, res.StatusCode)
 }
@@ -178,10 +178,10 @@ func TestAdjustEndpointsWithValidRequest(t *testing.T) {
 	req := httptest.NewRequest(http.MethodPost, "/adjustendpoints", reader)
 	w := httptest.NewRecorder()
 
-	httpProvider := &ProviderAPIServer{
+	providerAPIServer := &ProviderAPIServer{
 		provider: &FakePluginProvider{},
 	}
-	httpProvider.adjustEndpointsHandler(w, req)
+	providerAPIServer.adjustEndpointsHandler(w, req)
 	res := w.Result()
 	require.Equal(t, http.StatusOK, res.StatusCode)
 	require.NotNil(t, res.Body)
@@ -190,10 +190,10 @@ func TestAdjustEndpointsWithValidRequest(t *testing.T) {
 func TestNegotiate(t *testing.T) {
 	req := httptest.NewRequest(http.MethodGet, "/", nil)
 	w := httptest.NewRecorder()
-	httpProvider := &ProviderAPIServer{
+	providerAPIServer := &ProviderAPIServer{
 		provider: &FakePluginProvider{},
 	}
-	httpProvider.negotiate(w, req)
+	providerAPIServer.negotiate(w, req)
 	res := w.Result()
 	require.Equal(t, contentTypeHeader, res.Header.Get(varyHeader))
 	require.Equal(t, mediaTypeFormatAndVersion, res.Header.Get(contentTypeHeader))
