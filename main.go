@@ -392,7 +392,7 @@ func main() {
 			if awsErr != nil {
 				log.Fatal(awsErr)
 			}
-			go plugin.StartHTTPApi(awsProvider, startedChan, cfg.PluginProviderReadTimeout, cfg.PluginProviderWriteTimeout, cfg.PluginProviderAddress)
+			go plugin.StartHTTPApi(awsProvider, startedChan, cfg.PluginProviderReadTimeout, cfg.PluginProviderWriteTimeout, "127.0.0.1:8888")
 			<-startedChan
 		}
 		p, err = plugin.NewPluginProvider(cfg.PluginProviderURL)
