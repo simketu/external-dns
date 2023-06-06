@@ -80,7 +80,7 @@ func TestApplyChanges(t *testing.T) {
 			return
 		}
 		if successfulApplyChanges {
-			w.WriteHeader(http.StatusOK)
+			w.WriteHeader(http.StatusNoContent)
 		} else {
 			w.WriteHeader(http.StatusInternalServerError)
 		}

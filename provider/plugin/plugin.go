@@ -223,7 +223,7 @@ func (p PluginProvider) ApplyChanges(ctx context.Context, changes *plan.Changes)
 	}
 	defer resp.Body.Close()
 
-	if resp.StatusCode != http.StatusOK {
+	if resp.StatusCode != http.StatusNoContent {
 		applyChangesErrorsGauge.Inc()
 		log.Debugf("Failed to apply changes with code %d", resp.StatusCode)
 		return fmt.Errorf("failed to apply changes with code %d", resp.StatusCode)

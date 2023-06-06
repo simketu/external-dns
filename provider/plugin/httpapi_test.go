@@ -23,6 +23,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/require"
 	"sigs.k8s.io/external-dns/endpoint"
@@ -55,7 +56,7 @@ func TestRecordsHandlerRecords(t *testing.T) {
 	req := httptest.NewRequest(http.MethodGet, "/records", nil)
 	w := httptest.NewRecorder()
 
-	httpProvider := &HTTPProvider{
+	httpProvider := &ProviderAPIServer{
 		provider: &FakePluginProvider{},
 	}
 	httpProvider.recordsHandler(w, req)
@@ -67,7 +68,7 @@ func TestRecordsHandlerApplyChangesWithBadRequest(t *testing.T) {
 	req := httptest.NewRequest(http.MethodPost, "/applychanges", nil)
 	w := httptest.NewRecorder()
 
-	httpProvider := &HTTPProvider{
+	httpProvider := &ProviderAPIServer{
 		provider: &FakePluginProvider{},
 	}
 	httpProvider.recordsHandler(w, req)
@@ -93,19 +94,19 @@ func TestRecordsHandlerApplyChangesWithValidRequest(t *testing.T) {
 	req := httptest.NewRequest(http.MethodPost, "/applychanges", reader)
 	w := httptest.NewRecorder()
 
-	httpProvider := &HTTPProvider{
+	httpProvider := &ProviderAPIServer{
 		provider: &FakePluginProvider{},
 	}
 	httpProvider.recordsHandler(w, req)
 	res := w.Result()
-	require.Equal(t, http.StatusOK, res.StatusCode)
+	require.Equal(t, http.StatusNoContent, res.StatusCode)
 }
 
 func TestPropertyValuesEqualHandlerWithInvalidRequests(t *testing.T) {
 	req := httptest.NewRequest(http.MethodPost, "/propertyvaluesequals", nil)
 	w := httptest.NewRecorder()
 
-	httpProvider := &HTTPProvider{
+	httpProvider := &ProviderAPIServer{
 		provider: &FakePluginProvider{},
 	}
 	httpProvider.propertyValuesEqualHandler(w, req)
@@ -133,7 +134,7 @@ func TestPropertyValuesEqualWithValidRequest(t *testing.T) {
 	req := httptest.NewRequest(http.MethodPost, "/propertyvaluesequals", reader)
 	w := httptest.NewRecorder()
 
-	httpProvider := &HTTPProvider{
+	httpProvider := &ProviderAPIServer{
 		provider: &FakePluginProvider{},
 	}
 	httpProvider.propertyValuesEqualHandler(w, req)
@@ -146,7 +147,7 @@ func TestAdjustEndpointsHandlerWithInvalidRequest(t *testing.T) {
 	req := httptest.NewRequest(http.MethodPost, "/adjustendpoints", nil)
 	w := httptest.NewRecorder()
 
-	httpProvider := &HTTPProvider{
+	httpProvider := &ProviderAPIServer{
 		provider: &FakePluginProvider{},
 	}
 	httpProvider.adjustEndpointsHandler(w, req)
@@ -177,7 +178,7 @@ func TestAdjustEndpointsWithValidRequest(t *testing.T) {
 	req := httptest.NewRequest(http.MethodPost, "/adjustendpoints", reader)
 	w := httptest.NewRecorder()
 
-	httpProvider := &HTTPProvider{
+	httpProvider := &ProviderAPIServer{
 		provider: &FakePluginProvider{},
 	}
 	httpProvider.adjustEndpointsHandler(w, req)
@@ -189,7 +190,7 @@ func TestAdjustEndpointsWithValidRequest(t *testing.T) {
 func TestNegotiate(t *testing.T) {
 	req := httptest.NewRequest(http.MethodGet, "/", nil)
 	w := httptest.NewRecorder()
-	httpProvider := &HTTPProvider{
+	httpProvider := &ProviderAPIServer{
 		provider: &FakePluginProvider{},
 	}
 	httpProvider.negotiate(w, req)
@@ -197,4 +198,13 @@ func TestNegotiate(t *testing.T) {
 	require.Equal(t, contentTypeHeader, res.Header.Get(varyHeader))
 	require.Equal(t, mediaTypeFormatAndVersion, res.Header.Get(contentTypeHeader))
 	require.Equal(t, http.StatusOK, res.StatusCode)
+}
+
+func TestStartHTTPApi(t *testing.T) {
+	startedChan := make(chan struct{})
+	go StartHTTPApi(FakePluginProvider{}, startedChan, 5*time.Second, 10*time.Second, "127.0.0.1:8887")
+	<-startedChan
+	resp, err := http.Get("http://127.0.0.1:8887")
+	require.NoError(t, err)
+	require.Equal(t, mediaTypeFormatAndVersion, resp.Header.Get(contentTypeHeader))
 }

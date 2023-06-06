@@ -30,7 +30,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-type HTTPProvider struct {
+type ProviderAPIServer struct {
 	provider provider.Provider
 }
 
@@ -44,11 +44,12 @@ type PropertyValuesEqualsResponse struct {
 	Equals bool `json:"equals"`
 }
 
-func (p *HTTPProvider) recordsHandler(w http.ResponseWriter, req *http.Request) {
+func (p *ProviderAPIServer) recordsHandler(w http.ResponseWriter, req *http.Request) {
 	switch req.Method {
 	case http.MethodGet:
 		records, err := p.provider.Records(context.Background())
 		if err != nil {
+			log.Errorf("Failed to get Records: %v", err)
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
@@ -64,11 +65,11 @@ func (p *HTTPProvider) recordsHandler(w http.ResponseWriter, req *http.Request) 
 		}
 		err := p.provider.ApplyChanges(context.Background(), &changes)
 		if err != nil {
+			log.Errorf("Failed to Apply Changes: %v", err)
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusOK)
+		w.WriteHeader(http.StatusNoContent)
 		return
 	default:
 		log.Errorf("Unsupported method %s", req.Method)
@@ -76,7 +77,7 @@ func (p *HTTPProvider) recordsHandler(w http.ResponseWriter, req *http.Request) 
 	}
 }
 
-func (p *HTTPProvider) propertyValuesEqualHandler(w http.ResponseWriter, req *http.Request) {
+func (p *ProviderAPIServer) propertyValuesEqualHandler(w http.ResponseWriter, req *http.Request) {
 	if req.Method != http.MethodPost {
 		log.Errorf("Unsupported method %s", req.Method)
 		w.WriteHeader(http.StatusBadRequest)
@@ -100,7 +101,7 @@ func (p *HTTPProvider) propertyValuesEqualHandler(w http.ResponseWriter, req *ht
 	w.Write(out)
 }
 
-func (p *HTTPProvider) adjustEndpointsHandler(w http.ResponseWriter, req *http.Request) {
+func (p *ProviderAPIServer) adjustEndpointsHandler(w http.ResponseWriter, req *http.Request) {
 	if req.Method != http.MethodPost {
 		log.Errorf("Unsupported method %s", req.Method)
 		w.WriteHeader(http.StatusBadRequest)
@@ -121,7 +122,7 @@ func (p *HTTPProvider) adjustEndpointsHandler(w http.ResponseWriter, req *http.R
 	w.Write(out)
 }
 
-func (p *HTTPProvider) negotiate(w http.ResponseWriter, req *http.Request) {
+func (p *ProviderAPIServer) negotiate(w http.ResponseWriter, req *http.Request) {
 	w.Header().Set(varyHeader, contentTypeHeader)
 	w.Header().Set(contentTypeHeader, mediaTypeFormatAndVersion)
 	w.WriteHeader(http.StatusOK)
@@ -136,7 +137,7 @@ func (p *HTTPProvider) negotiate(w http.ResponseWriter, req *http.Request) {
 // - /propertyvaluesequal (POST): executes the PropertyValuesEqual method
 // - /adjustendpoints (POST): executes the AdjustEndpoints method
 func StartHTTPApi(provider provider.Provider, startedChan chan struct{}, readTimeout, writeTimeout time.Duration, providerPort string) {
-	p := HTTPProvider{
+	p := ProviderAPIServer{
 		provider: provider,
 	}
 
@@ -153,7 +154,7 @@ func StartHTTPApi(provider provider.Provider, startedChan chan struct{}, readTim
 		WriteTimeout: writeTimeout,
 	}
 
-	l, err := net.Listen("tcp", ":8888")
+	l, err := net.Listen("tcp", providerPort)
 	if err != nil {
 		log.Fatal(err)
 	}
