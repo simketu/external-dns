@@ -214,7 +214,6 @@ func (p PluginProvider) ApplyChanges(ctx context.Context, changes *plan.Changes)
 		log.Debugf("Failed to create request: %s", err.Error())
 		return err
 	}
-	req.Header.Set(acceptHeader, mediaTypeFormatAndVersion)
 	resp, err := p.client.Do(req)
 	if err != nil {
 		applyChangesErrorsGauge.Inc()
